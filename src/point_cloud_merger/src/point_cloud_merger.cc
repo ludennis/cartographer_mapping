@@ -3,7 +3,8 @@
 */
 
 #include <iostream>
-#include <pcl/io/pcd_io.h>
+#include <pcl/io/pcd_io.h> // for PointCloud<pcl::PointXYZ>::Ptr
+#include <pcl/registration/icp.h> //for pcl::IterativeClosestPoint
 
 int main(int argc, char* argv[])
 {
@@ -29,7 +30,6 @@ int main(int argc, char* argv[])
     {
         printf("Success! Loaded %i data points.\n", cloud_source->width * cloud_source->height);
     }
-
     printf("Opening pcd file: '%s' ... ", argv[2]);
     if (pcl::io::loadPCDFile<pcl::PointXYZ> (argv[2], *cloud_target) == -1)
     {
@@ -42,10 +42,23 @@ int main(int argc, char* argv[])
     }
 
     // run ICP over point clouds
+    printf("Aligning source with target using ICP ... \n");
 
-    // apply transformations to a combined point clouds
+    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+    icp.setInputSource(cloud_source);
+    icp.setInputTarget(cloud_target);
+    pcl::PointCloud<pcl::PointXYZ> cloud_merged;
+
+    icp.align(cloud_merged);
+
+    printf("ICP has converged: %i with score: %f\n", icp.hasConverged(), icp.getFitnessScore());
+    printf("Final transformation: \n");
+    std::cout << icp.getFinalTransformation() << std::endl;
 
     // save in file
+    pcl::io::savePCDFileBinary(argv[3], cloud_merged);
+
+    printf("Written point cloud data to file: '%s'\n", argv[3]);
 
     return 0;
 }
