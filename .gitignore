@@ -3,3 +3,4 @@ protobuf
 .catkin_workspace
 build
 devel
+.pyc
