@@ -48,7 +48,7 @@ if __name__ == '__main__':
             current_fix_quality = gps_util.get_fix_quality(msg.sentence)
         if topic == '/fix_vs330':
             gps_coord = gps_util.parse_gps_coordinates(msg, current_fix_quality)
-            if gps_reference == None and current_fix_quality == '4':
+            if gps_reference == None:
                 print('Current fix quality: {}'.format(current_fix_quality))
                 print ('Setting GPS reference with latitude and longitude: ({}, {}). '
                     'Fix quality: ({})'.format(REF_LATITUDE,REF_LONGITUDE,current_fix_quality))
