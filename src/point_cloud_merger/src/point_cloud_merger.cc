@@ -3,12 +3,16 @@
 */
 
 #include <iostream>
+#include <ctime>
 #include <pcl/io/pcd_io.h> // for PointCloud<pcl::PointXYZ>::Ptr
 #include <pcl/registration/icp.h> //for pcl::IterativeClosestPoint
 #include <pcl/filters/voxel_grid.h>
 
 int main(int argc, char* argv[])
 {
+    std::clock_t begin;
+    std::clock_t end;
+
     if (argc < 4)
     {
         printf("Usage: point_cloud_merger [source pcd filename] [target pcd filename] "
@@ -44,6 +48,7 @@ int main(int argc, char* argv[])
 
     // downsample both source and target clouds with voxel grid filter
     printf("Downsampling point clouds ... \n");
+    begin = std::clock();
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr source_filtered (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr target_filtered (new pcl::PointCloud<pcl::PointXYZ>);
@@ -55,8 +60,13 @@ int main(int argc, char* argv[])
     voxel_grid_filter.setInputCloud(cloud_target);
     voxel_grid_filter.filter(*target_filtered);
 
+    end = std::clock();
+    printf("Time elapsed for downsampling: %f\n", double(end - begin) / CLOCKS_PER_SEC);
+
     // run ICP over point clouds
     printf("Aligning source with target using ICP ... \n");
+
+    begin = std::clock();
 
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     icp.setInputSource(source_filtered);
@@ -65,14 +75,22 @@ int main(int argc, char* argv[])
 
     icp.align(cloud_merged);
 
+    end = std::clock();
+
+
     printf("ICP has converged: %i with score: %f\n", icp.hasConverged(), icp.getFitnessScore());
+    printf("Time elapsed for ICP: %f\n", double(end - begin) / CLOCKS_PER_SEC);
     printf("Final transformation: \n");
     std::cout << icp.getFinalTransformation() << std::endl;
 
     // save in file
+    begin = std::clock();
+
     pcl::io::savePCDFileBinary(argv[3], cloud_merged);
+    end = std::clock();
 
     printf("Written point cloud data to file: '%s'\n", argv[3]);
+    printf("Time elapsed for writing to file: %f\n", double(end - begin) / CLOCKS_PER_SEC);
 
     return 0;
 }
