@@ -1,0 +1,89 @@
+#! /usr/bin/env python
+
+'''
+    Plots GPS Coverage within a Bag file
+'''
+
+from __future__ import print_function
+import sys
+import os
+import copy
+
+import rospy
+import rosbag
+
+from matplotlib import pyplot as plt
+
+from gps_coverage_plotter import gps_util
+
+REF_LATITUDE = 24.775084704
+REF_LONGITUDE = 121.045888961
+
+if __name__ == '__main__':
+
+    if len(sys.argv) < 2:
+        print("Error: Missing Arguments\nUsage: rosrun gps_coverage_plotter gps_coverage_plotter [bag_filename]")
+        sys.exit()
+
+    print("Reading Bag file: '{}'".format(sys.argv[1]))
+    bag = rosbag.Bag(sys.argv[1])
+
+    # checks if gps related topic exists in bag file
+    bag_topics = bag.get_type_and_topic_info()[1].keys()
+    gps_topics = ['/nmea_sentence', '/fix_vs330'] # TODO: make this dynamic
+    for gps_topic in gps_topics:
+        if gps_topic not in bag_topics:
+            print('Error: topic "{}" not in bag file!'.format(gps_topic))
+            sys.exit()
+        else:
+            print('Found topic "{}" in bag file!'.format(gps_topic))
+
+    # variables to be used for reading bag file
+    current_fix_quality = 0
+    cartesian_coord_list = []
+    gps_reference = None
+
+    for topic, msg, t in bag.read_messages(gps_topics):
+        if topic == '/nmea_sentence':
+            current_fix_quality = gps_util.get_fix_quality(msg.sentence)
+        if topic == '/fix_vs330':
+            gps_coord = gps_util.parse_gps_coordinates(msg, current_fix_quality)
+            if gps_reference == None and current_fix_quality == '4':
+                print('Current fix quality: {}'.format(current_fix_quality))
+                print ('Setting GPS reference with latitude and longitude: ({}, {}). '
+                    'Fix quality: ({})'.format(REF_LATITUDE,REF_LONGITUDE,current_fix_quality))
+                gps_reference = gps_util.set_gps_reference(REF_LATITUDE, REF_LONGITUDE)
+            cartesian_coord = gps_util.gps_to_cartesian(gps_coord, gps_reference)
+            cartesian_coord_list.append(cartesian_coord)
+    bag.close()
+
+    # report coordinate statistics
+    num_coord = len(cartesian_coord_list)
+    num_fix_quality_1 = len([coord for coord in cartesian_coord_list if coord.fix_quality == '1'])
+    num_fix_quality_2 = len([coord for coord in cartesian_coord_list if coord.fix_quality == '2'])
+    num_fix_quality_4 = len([coord for coord in cartesian_coord_list if coord.fix_quality == '4'])
+    num_fix_quality_5 = len([coord for coord in cartesian_coord_list if coord.fix_quality == '5'])
+    print('Stored number of {} Cartesian coordinates'.format(len(cartesian_coord_list)))
+    print('Coordinates with fix quality 1: {} ({}%)'.format(num_fix_quality_1, \
+        num_fix_quality_1 * 100. / num_coord))
+    print('Coordinates with fix quality 2: {} ({}%)'.format(num_fix_quality_2, \
+        num_fix_quality_2 * 100. / num_coord))
+    print('Coordinates with fix quality 4: {} ({}%)'.format(num_fix_quality_4, \
+        num_fix_quality_4 * 100. / num_coord))
+    print('Coordinates with fix quality 5: {} ({}%)'.format(num_fix_quality_5, \
+        num_fix_quality_5 * 100. / num_coord))
+
+    # plot xy coordinates in a plot
+    x = [cartesian_coord.x for cartesian_coord in cartesian_coord_list]
+    y = [cartesian_coord.y for cartesian_coord in cartesian_coord_list]
+    colors = [cartesian_coord.get_color() for cartesian_coord in cartesian_coord_list]
+
+    plt.title('GPS Coverage Plot')
+    plt.xlabel('X-Axis')
+    plt.ylabel('Y-Axis')
+    plt.scatter(x, y, color=colors, s=0.001, marker='x')
+
+    # store as a file in the location where bag file is located
+    bag_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
+    plt.savefig(sys.argv[1] + '_gps_coverage.png', dpi=900)
+    print('Stored plot as "{}"'.format(sys.argv[1] + '_gps_coverage.png'))
