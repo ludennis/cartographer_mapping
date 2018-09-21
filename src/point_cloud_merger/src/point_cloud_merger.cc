@@ -7,9 +7,10 @@
 
 int main(int argc, char* argv[])
 {
-    if (argc < 3)
+    if (argc < 4)
     {
-        printf("Usage: point_cloud_merger [source pcd filename] [target pcd filename]\n");
+        printf("Usage: point_cloud_merger [source pcd filename] [target pcd filename] "
+            "[output pcd filename]\n");
         return -1;
     }
 
