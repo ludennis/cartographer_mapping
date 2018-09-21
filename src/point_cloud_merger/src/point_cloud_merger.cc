@@ -5,6 +5,7 @@
 #include <iostream>
 #include <pcl/io/pcd_io.h> // for PointCloud<pcl::PointXYZ>::Ptr
 #include <pcl/registration/icp.h> //for pcl::IterativeClosestPoint
+#include <pcl/filters/voxel_grid.h>
 
 int main(int argc, char* argv[])
 {
@@ -41,12 +42,25 @@ int main(int argc, char* argv[])
         printf("Success! Loaded %i data points.\n", cloud_target->width * cloud_target->height);
     }
 
+    // downsample both source and target clouds with voxel grid filter
+    printf("Downsampling point clouds ... \n");
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr source_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr target_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+
+    pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_filter;
+    voxel_grid_filter.setLeafSize(0.2, 0.2, 0.2);
+    voxel_grid_filter.setInputCloud(cloud_source);
+    voxel_grid_filter.filter(*source_filtered);
+    voxel_grid_filter.setInputCloud(cloud_target);
+    voxel_grid_filter.filter(*target_filtered);
+
     // run ICP over point clouds
     printf("Aligning source with target using ICP ... \n");
 
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-    icp.setInputSource(cloud_source);
-    icp.setInputTarget(cloud_target);
+    icp.setInputSource(source_filtered);
+    icp.setInputTarget(target_filtered);
     pcl::PointCloud<pcl::PointXYZ> cloud_merged;
 
     icp.align(cloud_merged);
