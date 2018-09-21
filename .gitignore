@@ -1,6 +1,6 @@
 *isolated
 protobuf
-.catkin_workspace
 build
 devel
-.pyc
+*.catkin_workspace
+*.pyc
