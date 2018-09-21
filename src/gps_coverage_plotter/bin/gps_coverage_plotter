@@ -79,8 +79,8 @@ if __name__ == '__main__':
     colors = [cartesian_coord.get_color() for cartesian_coord in cartesian_coord_list]
 
     plt.title('GPS Coverage Plot')
-    plt.xlabel('X-Axis')
-    plt.ylabel('Y-Axis')
+    plt.xlabel('X-Axis (meters)')
+    plt.ylabel('Y-Axis (meters)')
     plt.scatter(x, y, color=colors, s=0.001, marker='x')
 
     # store as a file in the location where bag file is located
