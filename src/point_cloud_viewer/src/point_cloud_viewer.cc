@@ -13,6 +13,8 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/registration/icp.h>
+#include <pcl/common/transforms.h>
 #include <pcl/common/common.h>
 #include <pcl/filters/passthrough.h>
 
@@ -100,6 +102,43 @@ int main(int argc, char** argv)
 		}
 
 		printf("Added '%s' into viewer.\n", argv[i]);
+	}
+
+	// calculate how to map all into the same coordinate with quadrilaterals vector
+	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_source (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_target (new pcl::PointCloud<pcl::PointXYZ>);
+
+	*icp_source = getPointsWithin(cloud_pointers.front(), quadrilaterals.front());
+	*icp_target = getPointsWithin(cloud_pointers.back(), quadrilaterals.back());	
+
+	icp.setInputSource(icp_source);
+	icp.setInputTarget(icp_target);
+
+	pcl::PointCloud<pcl::PointXYZ> result;	
+
+	icp.setMaximumIterations(1000);
+	icp.setTransformationEpsilon(1e-9);
+	icp.align(result);
+
+	std::cout << "ICP has converged: " << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+	std::cout << icp.getFinalTransformation() << std::endl;
+
+	// apply this transformation to source 
+	printf("Applying transformation matrix to source cloud ... \n");
+	Eigen::Matrix<float, 4, 4> trans_matrix = icp.getFinalTransformation();
+	pcl::transformPointCloud (*cloud_pointers.front() , *cloud_pointers.front(), trans_matrix);
+
+	// display all loaded point clouds after transformation
+	viewer->removeAllPointClouds();
+	for (size_t i = 0; i < cloud_pointers.size() ; ++i)
+	{
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud_pointers[i],
+			rand() % 255, rand() % 255, rand() % 255);
+		viewer->addPointCloud<pcl::PointXYZ> (cloud_pointers[i], single_color, argv[i+1]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i+1]);
+		viewer->initCameraParameters();
 	}
 
 	while(!viewer->wasStopped())
