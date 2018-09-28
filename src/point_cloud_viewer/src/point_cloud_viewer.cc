@@ -17,6 +17,17 @@
 // global variables
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
 
+// callback function to output clicked point's xyz coordinate
+void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
+{
+	pcl::PointXYZ point_clicked;
+	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
+	quadrilaterals.back()->push_back(point_clicked);
+	printf("Point index %i at (%f, %f, %f) was clicked.\n", event.getPointIndex(), point_clicked.x,
+																				   point_clicked.y,
+																				   point_clicked.z);
+}
+
 int main(int argc, char** argv)
 {
 	for (int i = 0; i < argc; ++i)
@@ -27,6 +38,9 @@ int main(int argc, char** argv)
 	// creates PCL visualizer to view the point cloud
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer("3D Viewer"));
 	viewer->setBackgroundColor(0,0,0);
+
+	// register viewer with mouse events and point clicking events
+	viewer->registerPointPickingCallback (pointPickingOccurred);
 
 	for (int i = 1; i < argc; ++i)
 	{
