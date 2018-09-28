@@ -9,7 +9,10 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/thread/thread.hpp>
+
 #include <pcl/io/pcd_io.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 // global variables
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
@@ -21,12 +24,33 @@ int main(int argc, char** argv)
 		printf("argv[%i]: %s\n", i, argv[i]);
 	}
 
+	// creates PCL visualizer to view the point cloud
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer("3D Viewer"));
+	viewer->setBackgroundColor(0,0,0);
+
 	for (int i = 1; i < argc; ++i)
 	{
+		// clear all previously loaded point clouds
+		viewer->removeAllPointClouds();
+
 		// load point cloud file and add to vector
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::io::loadPCDFile<pcl::PointXYZ>(argv[i], *cloud);
 		cloud_pointers.push_back(cloud);
+
+		// add point cloud into viewer
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, rand() %255,
+																							rand() %255,
+																							rand() % 255);
+		viewer->addPointCloud<pcl::PointXYZ> (cloud, single_color, argv[i]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i]);
+		viewer->initCameraParameters ();
+	}
+
+	while(!viewer->wasStopped())
+	{
+		viewer->spinOnce(100);
+		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}
 
 	return 0;
