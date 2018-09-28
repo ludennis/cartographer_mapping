@@ -4,8 +4,8 @@
   <node name="cartographer_offline_node" pkg="cartographer_ros"
       type="cartographer_offline_node" args="
           -configuration_directory  $(find cartographer_ros)/configuration_files
-          -configuration_basenames $(arg config).lua
-          -urdf_filenames $(find cartographer_ros)/urdf/$(arg vehicle).urdf
+          -configuration_basenames $(arg configs)
+          -urdf_filenames $(arg vehicles)
           -bag_filenames $(arg bag_filenames)"
       output="screen">
     <remap from="points2" to="$(arg input_topic)" />
