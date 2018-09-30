@@ -1,96 +1,151 @@
 /*
-    Package to merge multiple point clouds (.pcd files) into one
+	Views each input point cloud and merge them with ICP matching
+		1. select 2 points from each point cloud (with shift + left-click) that has overlap
+		2. preview all point clouds before performing ICP matching
+		3. perform ICP matching
+		4. Done
 */
 
 #include <iostream>
-#include <ctime>
-#include <pcl/io/pcd_io.h> // for PointCloud<pcl::PointXYZ>::Ptr
-#include <pcl/registration/icp.h> //for pcl::IterativeClosestPoint
-#include <pcl/filters/voxel_grid.h>
+#include <vector>
 
-int main(int argc, char* argv[])
+#include <boost/thread/thread.hpp>
+
+#include <pcl/io/pcd_io.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/registration/icp.h>
+#include <pcl/common/transforms.h>
+#include <pcl/common/common.h>
+#include <pcl/filters/passthrough.h>
+
+// global variables
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> quadrilaterals;
+
+// callback function to output clicked point's xyz coordinate
+void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
-    std::clock_t begin;
-    std::clock_t end;
+	pcl::PointXYZ point_clicked;
+	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
+	quadrilaterals.back()->push_back(point_clicked);
+	printf("Point index %i at (%f, %f, %f) was clicked.\n", event.getPointIndex(), point_clicked.x,
+																				   point_clicked.y,
+																				   point_clicked.z);
+}
 
-    if (argc < 4)
-    {
-        printf("Usage: point_cloud_merger [source pcd filename] [target pcd filename] "
-            "[output pcd filename]\n");
-        return -1;
-    }
+// extract points from a source cloud within a quadrilateral
+pcl::PointCloud<pcl::PointXYZ> getPointsWithin (const pcl::PointCloud<pcl::PointXYZ>::Ptr source,
+												const pcl::PointCloud<pcl::PointXYZ>::Ptr quad)
+{
+	// stores all min max xyz in two points
+	pcl::PointXYZ min_bound, max_bound;
+	pcl::getMinMax3D(*quad, min_bound, max_bound);
 
-    // declare point cloud pointers
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_source (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_target (new pcl::PointCloud<pcl::PointXYZ>);
+	// run source through a pass-through filter to extract points within quad
+	pcl::PassThrough<pcl::PointXYZ> pass_filter;
+	pass_filter.setInputCloud (source);
+	
+	pass_filter.setFilterFieldName ("x");
+	pass_filter.setFilterLimits (min_bound.x, max_bound.x);
+	pass_filter.filter (*source);
 
-    //load point clouds (.pcd files) from commandline arguments
-    printf("Opening pcd file: '%s' ... ", argv[1]);
-    if (pcl::io::loadPCDFile<pcl::PointXYZ> (argv[1], *cloud_source) == -1)
-    {
-        PCL_ERROR ("Error: couldn't read file %s\n", argv[1]);
-        return -1;
-    }
-    else
-    {
-        printf("Success! Loaded %i data points.\n", cloud_source->width * cloud_source->height);
-    }
-    printf("Opening pcd file: '%s' ... ", argv[2]);
-    if (pcl::io::loadPCDFile<pcl::PointXYZ> (argv[2], *cloud_target) == -1)
-    {
-        PCL_ERROR ("Error: couldn't read file %s\n", argv[2]);
-        return -1;
-    }
-    else
-    {
-        printf("Success! Loaded %i data points.\n", cloud_target->width * cloud_target->height);
-    }
+	pass_filter.setFilterFieldName ("y");
+	pass_filter.setFilterLimits (min_bound.y, max_bound.y);
+	pass_filter.filter (*source);
+	
+	return *source;
+}
 
-    // downsample both source and target clouds with voxel grid filter
-    printf("Downsampling point clouds ... \n");
-    begin = std::clock();
+int main(int argc, char** argv)
+{
+	for (int i = 0; i < argc; ++i)
+	{
+		printf("argv[%i]: %s\n", i, argv[i]);
+	}
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr source_filtered (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr target_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+	// creates PCL visualizer to view the point cloud
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer("3D Viewer"));
+	viewer->setBackgroundColor(0,0,0);
 
-    pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_filter;
-    voxel_grid_filter.setLeafSize(0.2, 0.2, 0.2);
-    voxel_grid_filter.setInputCloud(cloud_source);
-    voxel_grid_filter.filter(*source_filtered);
-    voxel_grid_filter.setInputCloud(cloud_target);
-    voxel_grid_filter.filter(*target_filtered);
+	// register viewer with mouse events and point clicking events
+	viewer->registerPointPickingCallback (pointPickingOccurred);
 
-    end = std::clock();
-    printf("Time elapsed for downsampling: %f\n", double(end - begin) / CLOCKS_PER_SEC);
+	for (int i = 1; i < argc; ++i)
+	{
+		// clear all previously loaded point clouds
+		viewer->removeAllPointClouds();
 
-    // run ICP over point clouds
-    printf("Aligning source with target using ICP ... \n");
+		// load point cloud file and add to vector
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::io::loadPCDFile<pcl::PointXYZ>(argv[i], *cloud);
+		cloud_pointers.push_back(cloud);
 
-    begin = std::clock();
+		// add point cloud into viewer
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, rand() %255,
+																							rand() %255,
+																							rand() % 255);
+		viewer->addPointCloud<pcl::PointXYZ> (cloud, single_color, argv[i]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i]);
+		viewer->initCameraParameters ();
 
-    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-    icp.setInputSource(source_filtered);
-    icp.setInputTarget(target_filtered);
-    pcl::PointCloud<pcl::PointXYZ> cloud_merged;
+		// declare point pair class to be stored from clicking
+		pcl::PointCloud<pcl::PointXYZ>::Ptr quad (new pcl::PointCloud<pcl::PointXYZ>);
+		quadrilaterals.push_back(quad);
 
-    icp.align(cloud_merged);
+		printf("quadrilaterals size: %ld.\n", quadrilaterals.size());
 
-    end = std::clock();
+		// select 4 points and use points within for icp matching
+		while (quadrilaterals.back()->size() < 4)
+		{
+			viewer->spinOnce(100);
+			boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+		}
 
+		printf("Added '%s' into viewer.\n", argv[i]);
+	}
 
-    printf("ICP has converged: %i with score: %f\n", icp.hasConverged(), icp.getFitnessScore());
-    printf("Time elapsed for ICP: %f\n", double(end - begin) / CLOCKS_PER_SEC);
-    printf("Final transformation: \n");
-    std::cout << icp.getFinalTransformation() << std::endl;
+	// calculate how to map all into the same coordinate with quadrilaterals vector
+	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
 
-    // save in file
-    begin = std::clock();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_source (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_target (new pcl::PointCloud<pcl::PointXYZ>);
 
-    pcl::io::savePCDFileBinary(argv[3], cloud_merged);
-    end = std::clock();
+	*icp_source = getPointsWithin(cloud_pointers.front(), quadrilaterals.front());
+	*icp_target = getPointsWithin(cloud_pointers.back(), quadrilaterals.back());	
 
-    printf("Written point cloud data to file: '%s'\n", argv[3]);
-    printf("Time elapsed for writing to file: %f\n", double(end - begin) / CLOCKS_PER_SEC);
+	icp.setInputSource(icp_source);
+	icp.setInputTarget(icp_target);
 
-    return 0;
+	pcl::PointCloud<pcl::PointXYZ> result;	
+
+	icp.setMaximumIterations(1000);
+	icp.setTransformationEpsilon(1e-9);
+	icp.align(result);
+
+	std::cout << "ICP has converged: " << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+	std::cout << icp.getFinalTransformation() << std::endl;
+
+	// apply this transformation to source 
+	printf("Applying transformation matrix to source cloud ... \n");
+	Eigen::Matrix<float, 4, 4> trans_matrix = icp.getFinalTransformation();
+	pcl::transformPointCloud (*cloud_pointers.front() , *cloud_pointers.front(), trans_matrix);
+
+	// display all loaded point clouds after transformation
+	viewer->removeAllPointClouds();
+	for (size_t i = 0; i < cloud_pointers.size() ; ++i)
+	{
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud_pointers[i],
+			rand() % 255, rand() % 255, rand() % 255);
+		viewer->addPointCloud<pcl::PointXYZ> (cloud_pointers[i], single_color, argv[i+1]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i+1]);
+		viewer->initCameraParameters();
+	}
+
+	while(!viewer->wasStopped())
+	{
+		viewer->spinOnce(100);
+		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+	}
+
+	return 0;
 }
