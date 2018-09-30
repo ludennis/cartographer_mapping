@@ -8,8 +8,6 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 
-float voxel_leaf_size = 0.2f;
-
 int main(int argc, char** argv)
 {
 	for (int i = 0; i < argc; ++i)
@@ -17,6 +15,8 @@ int main(int argc, char** argv)
 
 	if (argc < 3)
 		printf("Usage: point_cloud_filterer [voxel_leaf_size] [pcd_filename1] [pcd_filename2] ...\n");
+
+	float voxel_leaf_size = atof(argv[1]);
 
 	for (int i = 2 ; i < argc; ++i)
 	{
