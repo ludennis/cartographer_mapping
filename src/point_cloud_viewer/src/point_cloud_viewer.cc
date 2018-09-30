@@ -18,42 +18,14 @@
 #include <pcl/common/common.h>
 #include <pcl/filters/passthrough.h>
 
-// global variables
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> quadrilaterals;
-
 // callback function to output clicked point's xyz coordinate
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
 	pcl::PointXYZ point_clicked;
 	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
-	quadrilaterals.back()->push_back(point_clicked);
 	printf("Point index %i at (%f, %f, %f) was clicked.\n", event.getPointIndex(), point_clicked.x,
 																				   point_clicked.y,
 																				   point_clicked.z);
-}
-
-// extract points from a source cloud within a quadrilateral
-pcl::PointCloud<pcl::PointXYZ> getPointsWithin (const pcl::PointCloud<pcl::PointXYZ>::Ptr source,
-												const pcl::PointCloud<pcl::PointXYZ>::Ptr quad)
-{
-	// stores all min max xyz in two points
-	pcl::PointXYZ min_bound, max_bound;
-	pcl::getMinMax3D(*quad, min_bound, max_bound);
-
-	// run source through a pass-through filter to extract points within quad
-	pcl::PassThrough<pcl::PointXYZ> pass_filter;
-	pass_filter.setInputCloud (source);
-	
-	pass_filter.setFilterFieldName ("x");
-	pass_filter.setFilterLimits (min_bound.x, max_bound.x);
-	pass_filter.filter (*source);
-
-	pass_filter.setFilterFieldName ("y");
-	pass_filter.setFilterLimits (min_bound.y, max_bound.y);
-	pass_filter.filter (*source);
-	
-	return *source;
 }
 
 int main(int argc, char** argv)
@@ -72,13 +44,9 @@ int main(int argc, char** argv)
 
 	for (int i = 1; i < argc; ++i)
 	{
-		// clear all previously loaded point clouds
-		viewer->removeAllPointClouds();
-
 		// load point cloud file and add to vector
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::io::loadPCDFile<pcl::PointXYZ>(argv[i], *cloud);
-		cloud_pointers.push_back(cloud);
 
 		// add point cloud into viewer
 		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, rand() %255,
@@ -87,58 +55,6 @@ int main(int argc, char** argv)
 		viewer->addPointCloud<pcl::PointXYZ> (cloud, single_color, argv[i]);
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i]);
 		viewer->initCameraParameters ();
-
-		// declare point pair class to be stored from clicking
-		pcl::PointCloud<pcl::PointXYZ>::Ptr quad (new pcl::PointCloud<pcl::PointXYZ>);
-		quadrilaterals.push_back(quad);
-
-		printf("quadrilaterals size: %ld.\n", quadrilaterals.size());
-
-		// select 4 points and use points within for icp matching
-		while (quadrilaterals.back()->size() < 4)
-		{
-			viewer->spinOnce(100);
-			boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-		}
-
-		printf("Added '%s' into viewer.\n", argv[i]);
-	}
-
-	// calculate how to map all into the same coordinate with quadrilaterals vector
-	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-
-	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_source (new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_target (new pcl::PointCloud<pcl::PointXYZ>);
-
-	*icp_source = getPointsWithin(cloud_pointers.front(), quadrilaterals.front());
-	*icp_target = getPointsWithin(cloud_pointers.back(), quadrilaterals.back());	
-
-	icp.setInputSource(icp_source);
-	icp.setInputTarget(icp_target);
-
-	pcl::PointCloud<pcl::PointXYZ> result;	
-
-	icp.setMaximumIterations(1000);
-	icp.setTransformationEpsilon(1e-9);
-	icp.align(result);
-
-	std::cout << "ICP has converged: " << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
-	std::cout << icp.getFinalTransformation() << std::endl;
-
-	// apply this transformation to source 
-	printf("Applying transformation matrix to source cloud ... \n");
-	Eigen::Matrix<float, 4, 4> trans_matrix = icp.getFinalTransformation();
-	pcl::transformPointCloud (*cloud_pointers.front() , *cloud_pointers.front(), trans_matrix);
-
-	// display all loaded point clouds after transformation
-	viewer->removeAllPointClouds();
-	for (size_t i = 0; i < cloud_pointers.size() ; ++i)
-	{
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud_pointers[i],
-			rand() % 255, rand() % 255, rand() % 255);
-		viewer->addPointCloud<pcl::PointXYZ> (cloud_pointers[i], single_color, argv[i+1]);
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i+1]);
-		viewer->initCameraParameters();
 	}
 
 	while(!viewer->wasStopped())
