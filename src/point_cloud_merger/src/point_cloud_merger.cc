@@ -17,6 +17,8 @@
 #include <pcl/common/common.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/registration/transformation_estimation_svd.h>
+#include <pcl/registration/transformation_estimation_2D.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
 class Line
@@ -148,8 +150,33 @@ int main(int argc, char** argv)
 			viewer->spinOnce(100);
 			boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 		}
+	}
 
-		printf("Added '%s' into viewer.\n", argv[i]);
+	// map source cloud to target cloud with their respective quadruples
+	pcl::registration::TransformationEstimationSVD<pcl::PointXYZ,pcl::PointXYZ> tf_est;
+
+	Eigen::Matrix4f init_guess;
+	tf_est.estimateRigidTransformation(*(quadruples.front()), *(quadruples.back()), init_guess);
+	pcl::transformPointCloud(*(filtered_clouds.front()), *(filtered_clouds.front()), init_guess);
+
+	// use only points within target's quadruple for matching
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cropped_source (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cropped_target (new pcl::PointCloud<pcl::PointXYZ>);
+
+	*cropped_source = getPointsWithin(filtered_clouds.front(), quadruples.back());
+	*cropped_target = getPointsWithin(filtered_clouds.back(), quadruples.back());
+	
+	// display cropped point clouds
+	viewer->removeAllPointClouds();
+	for (size_t i = 0; i < filtered_clouds.size() ; ++i)
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cropped_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+		*cropped_cloud = getPointsWithin(filtered_clouds[i], quadruples.back());
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cropped_cloud,
+			rand() % 255, rand() % 255, rand() % 255);
+		viewer->addPointCloud<pcl::PointXYZ> (cropped_cloud, single_color, argv[i+1]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i+1]);
+		viewer->initCameraParameters();
 	}
 
 	// calculate how to map all into the same coordinate with quadrilaterals vector
