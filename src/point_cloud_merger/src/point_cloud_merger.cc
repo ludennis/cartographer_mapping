@@ -69,27 +69,46 @@ void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 																				   point_clicked.z);
 }
 
-// extract points from a source cloud within a quadrilateral
 pcl::PointCloud<pcl::PointXYZ> getPointsWithin (const pcl::PointCloud<pcl::PointXYZ>::Ptr source,
 												const pcl::PointCloud<pcl::PointXYZ>::Ptr quadruple)
 {
-	// stores all min max xyz in two points
-	pcl::PointXYZ min_bound, max_bound;
-	pcl::getMinMax3D(*quad, min_bound, max_bound);
+	// get the 4 lines from the 4 points in quadruple (tl = top left, br = bottom right)
+	Line line_tl_tr( quadruple->points[0] , quadruple->points[1] );
+	Line line_tr_br( quadruple->points[1] , quadruple->points[2] );
+	Line line_br_bl( quadruple->points[2] , quadruple->points[3] );
+	Line line_bl_tl( quadruple->points[3] , quadruple->points[0] );
 
-	// run source through a pass-through filter to extract points within quad
-	pcl::PassThrough<pcl::PointXYZ> pass_filter;
-	pass_filter.setInputCloud (source);
+	for ( size_t i = 0; i < quadruple->points.size(); ++i)
+	{
+		printf("quadruple->points[%ld]: %f, %f, %f\n", i, quadruple->points[i].x,
+			quadruple->points[i].y, quadruple->points[i].z);
+	}
 	
-	pass_filter.setFilterFieldName ("x");
-	pass_filter.setFilterLimits (min_bound.x, max_bound.x);
-	pass_filter.filter (*source);
+	printf ("line_tl_tr: slope = %f, intersect = %f\n", line_tl_tr.slope, line_tl_tr.intersect);
 
-	pass_filter.setFilterFieldName ("y");
-	pass_filter.setFilterLimits (min_bound.y, max_bound.y);
-	pass_filter.filter (*source);
-	
-	return *source;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr source_extracted (new pcl::PointCloud<pcl::PointXYZ>);
+	for ( size_t i = 0; i < source->points.size(); ++i)
+	{
+		float x = source->points[i].x, y = source->points[i].y;
+		
+		if ((	y < line_tl_tr.slope * x + line_tl_tr.intersect and
+				y > line_br_bl.slope * x + line_br_bl.intersect and
+				y < line_tr_br.slope * x + line_tr_br.intersect and
+				y > line_bl_tl.slope * x + line_bl_tl.intersect)
+			or
+			(	y >= line_tl_tr.slope * x + line_tl_tr.intersect and
+				y <= line_br_bl.slope * x + line_br_bl.intersect and
+				y >= line_tr_br.slope * x + line_tr_br.intersect and 
+				y <= line_bl_tl.slope * x + line_bl_tl.intersect))
+		{
+			source_extracted->points.push_back(source->points[i]);
+		}	
+	}
+
+	printf ("source->points.size() = %ld, source_extracted->points.size() = %ld\n", 
+		source->points.size(), source_extracted->points.size());
+
+	return *source_extracted;
 }
 
 int main(int argc, char** argv)
