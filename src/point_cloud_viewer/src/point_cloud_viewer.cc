@@ -16,7 +16,6 @@
 #include <pcl/registration/icp.h>
 #include <pcl/common/transforms.h>
 #include <pcl/common/common.h>
-#include <pcl/filters/passthrough.h>
 
 // callback function to output clicked point's xyz coordinate
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
@@ -53,7 +52,7 @@ int main(int argc, char** argv)
 																							rand() %255,
 																							rand() % 255);
 		viewer->addPointCloud<pcl::PointXYZ> (cloud, single_color, argv[i]);
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i]);
 		viewer->initCameraParameters ();
 	}
 
