@@ -16,6 +16,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/common/common.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
 class Line
@@ -38,6 +39,8 @@ public:
 // global variables
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> quadrilaterals;
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> filtered_clouds;
+float VOXEL_LEAF_SIZE = 0.4f;
 bool enterKeyPressed = false;
 
 void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event)
@@ -117,12 +120,20 @@ int main(int argc, char** argv)
 		pcl::io::loadPCDFile<pcl::PointXYZ>(argv[i], *cloud);
 		cloud_pointers.push_back(cloud);
 
+		// filter source clouds
+		pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::VoxelGrid<pcl::PointXYZ> vg_filter;
+		vg_filter.setInputCloud (cloud);
+		vg_filter.setLeafSize(VOXEL_LEAF_SIZE, VOXEL_LEAF_SIZE, VOXEL_LEAF_SIZE);
+		vg_filter.filter (*filtered_cloud);
+		filtered_clouds.push_back(filtered_cloud);
+
 		// add point cloud into viewer
 		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, rand() %255,
 																							rand() %255,
 																							rand() % 255);
-		viewer->addPointCloud<pcl::PointXYZ> (cloud, single_color, argv[i]);
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i]);
+		viewer->addPointCloud<pcl::PointXYZ> (filtered_cloud, single_color, argv[i]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i]);
 		viewer->initCameraParameters ();
 
 		// declare point pair class to be stored from clicking
