@@ -11,12 +11,13 @@
 
 #include <boost/thread/thread.hpp>
 
-#include <pcl/io/pcd_io.h>
-#include <pcl/registration/icp.h>
 #include <pcl/common/transforms.h>
 #include <pcl/common/common.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/registration/icp.h>
+#include <pcl/registration/ndt.h>
 #include <pcl/registration/transformation_estimation_svd.h>
 #include <pcl/registration/transformation_estimation_2D.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -190,29 +191,119 @@ int main(int argc, char** argv)
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}
 
+	// matching between the cropped_source and cropped_target
+	Eigen::Matrix4f final_trans_matrix;
+	if ( strcmp(argv[1],"icp") == 0)
+	{
+		// icp matching
+		printf("Matching source cloud with target cloud with ICP ... \n");	
+		begin_time = clock();
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_source (new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_target (new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+		pcl::PointCloud<pcl::PointXYZ>::Ptr icp_source (new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr icp_target (new pcl::PointCloud<pcl::PointXYZ>);
+	
+		*icp_source = *cropped_source;
+		*icp_target = *cropped_target;
+	
+		icp.setInputSource(icp_source);
+		icp.setInputTarget(icp_target);
+	
+		pcl::PointCloud<pcl::PointXYZ> result;	
+	
+		icp.setMaxCorrespondenceDistance (10.0f);
+		icp.setMaximumIterations(1000);
+		icp.setTransformationEpsilon(1e-9);
+		icp.setEuclideanFitnessEpsilon (0.0001f);
+		icp.align(result);
 
-	*icp_source = getPointsWithin(cloud_pointers.front(), quadrilaterals.front());
-	*icp_target = getPointsWithin(cloud_pointers.back(), quadrilaterals.back());	
 
-	icp.setInputSource(icp_source);
-	icp.setInputTarget(icp_target);
+		end_time = clock();
+		std::cout << "ICP has converged: " << icp.hasConverged() << " score: " 
+				  << icp.getFitnessScore() << std::endl;
+		std::cout << icp.getFinalTransformation() << std::endl;
+		std::cout << "Elapsed time: " << double(end_time - begin_time) / CLOCKS_PER_SEC << std::endl;
+	
+		// applying icp's transformation to source cloud
+		final_trans_matrix = icp.getFinalTransformation();
+	} else if ( strcmp(argv[1],"ndt") == 0 )
+	{
+		// ndt matching
+		printf("Matching source cloud with target cloud with NDT ... \n");
+		pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
+		pcl::PointCloud<pcl::PointXYZ>::Ptr ndt_source (new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr ndt_target (new pcl::PointCloud<pcl::PointXYZ>);
 
-	pcl::PointCloud<pcl::PointXYZ> result;	
+		// maps the cropped area to the full filtered target cloud
+		*ndt_source = *cropped_source;
+		*ndt_target = *cropped_target;
 
-	icp.setMaximumIterations(1000);
-	icp.setTransformationEpsilon(1e-9);
-	icp.align(result);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::VoxelGrid<pcl::PointXYZ> vg_filter;
+		vg_filter.setInputCloud (ndt_source);
+		vg_filter.setLeafSize(2.0f, 2.0f, 2.0f);
+		vg_filter.filter (*ndt_source);
 
-	std::cout << "ICP has converged: " << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
-	std::cout << icp.getFinalTransformation() << std::endl;
+		ndt.setInputSource(ndt_source);
+		ndt.setInputTarget(ndt_target);
+		
+		// initial ndt parameters
+		float trans_epi = 0.005f;
+		float step_size = 0.05f;
+		int max_iteration = 200;
+		int num_rematch = 0;
+		float ndt_trans_prob = 2.5f;
+		init_guess = Eigen::Matrix4f::Identity();
+	
+		std::chrono::time_point<std::chrono::system_clock> matching_start, matching_end;
+		matching_start = std::chrono::system_clock::now();
 
-	// apply this transformation to source 
-	printf("Applying transformation matrix to source cloud ... \n");
-	Eigen::Matrix<float, 4, 4> trans_matrix = icp.getFinalTransformation();
-	pcl::transformPointCloud (*cloud_pointers.front() , *cloud_pointers.front(), trans_matrix);
+		do 
+		{			
+			// ndt parameters
+			ndt.setTransformationEpsilon (trans_epi);
+			ndt.setStepSize (step_size);
+			ndt.setResolution (1.0f);
+			ndt.setOulierRatio(0.2f);
+			ndt.setMaximumIterations (max_iteration);
+
+
+			pcl::PointCloud<pcl::PointXYZ> result;
+			ndt.align (result, init_guess);
+			printf ("Number of rematch: %d\n", num_rematch++);
+			printf ("Normal Distributions Transform has converged: %d, score: %f, iterations: %d, \
+					 outlier ratio: %f, trans prob: %f, resolution: %f, step size: %f, epsilon: %f\n", 
+					 ndt.hasConverged(), ndt.getFitnessScore(), ndt.getFinalNumIteration(), 
+					 ndt.getOulierRatio(), ndt.getTransformationProbability(), ndt.getResolution(),
+					 step_size, trans_epi);
+			
+			// visualize
+
+			// update ndt parameters
+			//trans_epi /= 1.1f;
+			//step_size /= 1.1f;
+
+			// randomize init guess matrix within translation range < 1m and rotation angel < 5 degrees
+			float x_rotation_deg = (float) (rand() % 40000 - 20000) / 10000.0f; // +- 2.0000 degree
+			float y_rotation_deg = (float) (rand() % 40000 - 20000) / 10000.0f; // +- 2.0000 degree
+			float z_translation = (float) (rand() % 20000 - 10000) / 1000.0f; // +- 10.0000 m
+			printf ("Randomized init matrix with x_rotation: %f, y_rotation: %f, z_translation: %f\n",
+				x_rotation_deg, y_rotation_deg, z_translation);
+			Eigen::AngleAxisf init_rotation_x ( x_rotation_deg * M_PI/ 180.0f , Eigen::Vector3f::UnitX());
+			Eigen::AngleAxisf init_rotation_y ( y_rotation_deg * M_PI/ 180.0f , Eigen::Vector3f::UnitY());
+			Eigen::Translation3f init_translation ( 0, 0, z_translation ) ;
+			init_guess = (init_translation * init_rotation_x * init_rotation_y).matrix ();
+			if (num_rematch % 50 == 0)
+				ndt_trans_prob += 0.5f;
+
+			final_trans_matrix = ndt.getFinalTransformation();
+		} 
+		while (ndt.getTransformationProbability () > ndt_trans_prob or ndt.getFitnessScore() > 1.0f);
+
+		// apply final transformation		
+		pcl::transformPointCloud (*(filtered_clouds.front()), *(filtered_clouds.front()), final_trans_matrix);
+
+	}
 
 	// display all loaded point clouds after transformation
 	viewer->removeAllPointClouds();
