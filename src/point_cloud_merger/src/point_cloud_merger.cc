@@ -69,6 +69,15 @@ pcl::PointCloud<pcl::PointXYZ> getPointsWithin (const pcl::PointCloud<pcl::Point
 
 int main(int argc, char** argv)
 {
+	if (argc < 4)
+	{
+		printf("Usage: point_cloud_merger [icp|ndt] [source_cloud] [target_cloud1] [target_cloud2] ...\n");
+	}
+	if (strcmp("icp", argv[1]) != 0 and strcmp("ndt", argv[1]) !=0)
+	{
+		printf("Error: argv[1] must be 'icp' or 'ndt'.\n");
+		return -1;
+	}
 	for (int i = 0; i < argc; ++i)
 	{
 		printf("argv[%i]: %s\n", i, argv[i]);
@@ -82,7 +91,7 @@ int main(int argc, char** argv)
 	viewer->registerPointPickingCallback (pointPickingOccurred);
 
 	viewer->registerKeyboardCallback (keyboardEventOccurred);
-	for (int i = 1; i < argc; ++i)
+	for (int i = 2; i < argc; ++i)
 	{
 		// clear all previously loaded point clouds
 		viewer->removeAllPointClouds();
