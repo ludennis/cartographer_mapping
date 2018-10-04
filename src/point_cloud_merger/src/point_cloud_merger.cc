@@ -42,9 +42,9 @@ public:
 };
 
 // global variables
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> quadrilaterals;
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> source_clouds;
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> filtered_clouds;
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> quadruples;
 float VOXEL_LEAF_SIZE = 0.4f;
 bool enterKeyPressed = false;
 clock_t begin_time, end_time;
@@ -63,7 +63,7 @@ void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
 	pcl::PointXYZ point_clicked;
 	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
-	quadrilaterals.back()->push_back(point_clicked);
+	quadruples.back()->push_back(point_clicked);
 	printf("Point index %i at (%f, %f, %f) was clicked.\n", event.getPointIndex(), point_clicked.x,
 																				   point_clicked.y,
 																				   point_clicked.z);
@@ -71,7 +71,7 @@ void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 
 // extract points from a source cloud within a quadrilateral
 pcl::PointCloud<pcl::PointXYZ> getPointsWithin (const pcl::PointCloud<pcl::PointXYZ>::Ptr source,
-												const pcl::PointCloud<pcl::PointXYZ>::Ptr quad)
+												const pcl::PointCloud<pcl::PointXYZ>::Ptr quadruple)
 {
 	// stores all min max xyz in two points
 	pcl::PointXYZ min_bound, max_bound;
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
 		// load point cloud file and add to vector
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::io::loadPCDFile<pcl::PointXYZ>(argv[i], *cloud);
-		cloud_pointers.push_back(cloud);
+		source_clouds.push_back(cloud);
 
 		// filter source clouds
 		pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ>);
@@ -143,13 +143,13 @@ int main(int argc, char** argv)
 		viewer->initCameraParameters ();
 
 		// declare point pair class to be stored from clicking
-		pcl::PointCloud<pcl::PointXYZ>::Ptr quad (new pcl::PointCloud<pcl::PointXYZ>);
-		quadrilaterals.push_back(quad);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr quadruple (new pcl::PointCloud<pcl::PointXYZ>);
+		quadruples.push_back(quadruple);
 
-		printf("quadrilaterals size: %ld.\n", quadrilaterals.size());
+		printf("quadruples.size(): %ld.\n", quadruples.size());
 
 		// select 4 points and use points within for icp matching
-		while (quadrilaterals.back()->size() < 4)
+		while (quadruples.back()->size() < 4)
 		{
 			viewer->spinOnce(100);
 			boost::this_thread::sleep (boost::posix_time::microseconds (100000));
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 
 	Eigen::Matrix4f init_guess;
 	tf_est.estimateRigidTransformation(*(quadruples.front()), *(quadruples.back()), init_guess);
-	pcl::transformPointCloud(*(filtered_clouds.front()), *(filtered_clouds.front()), init_guess);
+	pcl::transformPointCloud(*(filtered_clouds.front()), *(filtered_clouds.front()), init_guess);	
 
 	// use only points within target's quadruple for matching
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cropped_source (new pcl::PointCloud<pcl::PointXYZ>);
@@ -313,12 +313,12 @@ int main(int argc, char** argv)
 
 	// display all loaded point clouds after transformation
 	viewer->removeAllPointClouds();
-	for (size_t i = 0; i < cloud_pointers.size() ; ++i)
+	for (size_t i = 0; i < filtered_clouds.size(); ++i)
 	{
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud_pointers[i],
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(filtered_clouds[i],
 			rand() % 255, rand() % 255, rand() % 255);
-		viewer->addPointCloud<pcl::PointXYZ> (cloud_pointers[i], single_color, argv[i+1]);
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, argv[i+1]);
+		viewer->addPointCloud<pcl::PointXYZ> (filtered_clouds[i], single_color, argv[i+1]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i+1]);
 		viewer->initCameraParameters();
 	}
 
