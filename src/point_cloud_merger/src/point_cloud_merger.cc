@@ -6,6 +6,8 @@
 		4. Done
 */
 
+#include <chrono>
+#include <ctime>
 #include <iostream>
 #include <vector>
 
@@ -45,6 +47,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> quadrilaterals;
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> filtered_clouds;
 float VOXEL_LEAF_SIZE = 0.4f;
 bool enterKeyPressed = false;
+clock_t begin_time, end_time;
 
 void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event)
 {
@@ -303,6 +306,9 @@ int main(int argc, char** argv)
 		// apply final transformation		
 		pcl::transformPointCloud (*(filtered_clouds.front()), *(filtered_clouds.front()), final_trans_matrix);
 
+		matching_end = std::chrono::system_clock::now();
+		printf ("Time for matching: %f ms\n", std::chrono::duration_cast<std::chrono::microseconds>(
+			matching_end - matching_start).count() / 1000.0);
 	}
 
 	// display all loaded point clouds after transformation
