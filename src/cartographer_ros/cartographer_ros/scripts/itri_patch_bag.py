@@ -38,7 +38,7 @@ with Bag(outfile, 'w') as fout:
             if good_gps_signal == False:
                 msg.status.status = -1
             fout.write("/fix", msg, t)
-        if topic == '/imu/data':
+        if topic == '/imu/data' or topic == '/imu/data/':
             msg.header.frame_id = 'base_imu'
 
             if imu_smoothing == True:
