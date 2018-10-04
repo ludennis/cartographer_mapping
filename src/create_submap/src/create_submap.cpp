@@ -23,7 +23,6 @@ int main (int argc, char** argv)
         return -1;
     }
 
-    double leaf_size = atof(argv[2]);
     int gridSizeX = 200;
     int gridSizeY = 200;
     pcl::PointCloud<PointT>::Ptr inputCloud (new pcl::PointCloud<PointT>);
@@ -56,16 +55,6 @@ int main (int argc, char** argv)
         {
             if(submap[x][y].size()>0)
             {
-                // Filtering cloud points
-                pcl::PointCloud<PointT>::Ptr filteredCloud
-                    (new pcl::PointCloud<PointT>);
-                pcl::VoxelGrid<PointT> voxelGridFilter;
-                pcl::PointCloud<PointT>::Ptr submapCloudPtr
-                    (new pcl::PointCloud<pcl::PointXYZ> (submap[x][y]));
-                voxelGridFilter.setLeafSize (leaf_size, leaf_size, leaf_size);
-                voxelGridFilter.setInputCloud (submapCloudPtr);
-                voxelGridFilter.filter (*filteredCloud);
-
                 // save to PCD file
                 char filename[100];
                 sprintf(filename,"./submap_%d_%d.pcd",x-submapXYSize/2,  y-submapXYSize/2);
