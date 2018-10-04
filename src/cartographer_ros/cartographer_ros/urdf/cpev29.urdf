@@ -38,7 +38,7 @@
   <joint name="car_to_imu_mount" type="fixed">
     <parent link="base_link"/>
     <child link="tracking_imu"/>
-    <origin rpy="0 0 0" xyz="0.15 0 -0.3"/>
+    <origin rpy="0.005119941875798569 0.06015359501249937 0.32124031841042094" xyz="0.05 0 -0.25"/>
   </joint>
 
   <joint name="imu_mount_to_imu" type="fixed">
@@ -59,7 +59,7 @@
   <joint name="car_to_lidar" type="fixed">
     <parent link="base_link"/>
     <child link="velodyne"/>
-    <origin rpy="0.0 0.09 -0.03" xyz="1.2 0.0 1.0"/>
+    <origin rpy="0.005 0.14 0.0" xyz="1.2 0.0 1.0"/>
   </joint>
 
   <link name="gps">
