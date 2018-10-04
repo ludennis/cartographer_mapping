@@ -19,7 +19,7 @@ typedef pcl::PointXYZ PointT;
 int main (int argc, char** argv)
 {
     if (argc < 3) {
-        printf("Usage: create_submap [filename] [leaf_size]\n");
+        printf("Usage: create_submap [ascii|binary] [filename]\n");
         return -1;
     }
 
@@ -29,7 +29,7 @@ int main (int argc, char** argv)
     pcl::PointCloud<PointT>::Ptr inputCloud (new pcl::PointCloud<PointT>);
     pcl::PointCloud<PointT> submap[submapXYSize][submapXYSize];
 
-    int ret = pcl::io::loadPCDFile (argv[1], *inputCloud);
+    int ret = pcl::io::loadPCDFile (argv[2], *inputCloud);
     if (ret < 0) {
         PCL_ERROR("Couldn't read file %s\n", argv[1]);
         return -1;
@@ -69,9 +69,21 @@ int main (int argc, char** argv)
                 // save to PCD file
                 char filename[100];
                 sprintf(filename,"./submap_%d_%d.pcd",x-submapXYSize/2,  y-submapXYSize/2);
-                if(pcl::io::savePCDFileBinary(filename, *filteredCloud) == -1){
-                    std::cout << "Failed saving " << filename << "." << std::endl;
+
+			    if ( strcmp( argv[1], "ascii") == 0 )
+			    {
+                    if(pcl::io::savePCDFileASCII(filename, submaps[x][y]) == -1)
+                    {
+                        std::cout << "Failed saving " << filename << "." << std::endl;
+                    }
                 }
+				else
+				{
+					if(pcl::io::savePCDFileBinary(filename, submaps[x][y]) == -1)
+					{
+						std::cout << "Failed saving " << filename << "." << std::endl;
+					}
+				}
             }
         }
     return 0;
