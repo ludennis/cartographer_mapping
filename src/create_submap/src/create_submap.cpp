@@ -26,7 +26,7 @@ int main (int argc, char** argv)
     int gridSizeX = 200;
     int gridSizeY = 200;
     pcl::PointCloud<PointT>::Ptr inputCloud (new pcl::PointCloud<PointT>);
-    pcl::PointCloud<PointT> submap[submapXYSize][submapXYSize];
+    pcl::PointCloud<PointT> submaps[submapXYSize][submapXYSize];
 
     int ret = pcl::io::loadPCDFile (argv[2], *inputCloud);
     if (ret < 0) {
@@ -47,15 +47,20 @@ int main (int argc, char** argv)
     {
         int x = submapXYSize/2 + floor(inputCloud->points[index].x/gridSizeX);
         int y = submapXYSize/2 + floor(inputCloud->points[index].y/gridSizeY);
-        submap[x][y].points.push_back(inputCloud->points[index]);
+        submaps[x][y].points.push_back(inputCloud->points[index]);
     }
 
     for(int x=0;x<submapXYSize;x++)
         for(int y=0;y<submapXYSize;y++)
         {
-            if(submap[x][y].size()>0)
+            if(submaps[x][y].size()>0)
             {
                 // save to PCD file
+                submaps[x][y].width = (int) submaps[x][y].points.size();
+                submaps[x][y].height = 1;
+                printf ("submaps[%d][%d]: points.size() = %ld, width = %d, height = %d, is_dense = %d\n", 
+				    x, y, submaps[x][y].points.size(), submaps[x][y].width, submaps[x][y].height, 
+				    submaps[x][y].is_dense);
                 char filename[100];
                 sprintf(filename,"./submap_%d_%d.pcd",x-submapXYSize/2,  y-submapXYSize/2);
 
