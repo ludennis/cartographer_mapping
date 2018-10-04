@@ -131,9 +131,8 @@ int main(int argc, char** argv)
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer("3D Viewer"));
 	viewer->setBackgroundColor(0,0,0);
 
-	// register viewer with mouse events and point clicking events
+	// register viewer with keyboard events and point clicking events
 	viewer->registerPointPickingCallback (pointPickingOccurred);
-
 	viewer->registerKeyboardCallback (keyboardEventOccurred);
 	for (int i = 2; i < argc; ++i)
 	{
@@ -202,8 +201,6 @@ int main(int argc, char** argv)
 		viewer->initCameraParameters();
 	}
 
-	// calculate how to map all into the same coordinate with quadrilaterals vector
-	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
 	// wait until enter key pressed before matching
 	enterKeyPressed = false;
 	printf("Press Enter Key to start matching ...\n");
@@ -330,7 +327,7 @@ int main(int argc, char** argv)
 			matching_end - matching_start).count() / 1000.0);
 	}
 
-	// display all loaded point clouds after transformation
+	// reload updated clouds
 	viewer->removeAllPointClouds();
 	for (size_t i = 0; i < filtered_clouds.size(); ++i)
 	{
@@ -341,11 +338,25 @@ int main(int argc, char** argv)
 		viewer->initCameraParameters();
 	}
 
+	// merge source and target clouds into one cloud
+	pcl::PointCloud<pcl::PointXYZ>::Ptr merged_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+	for (size_t i = 0; i < filtered_clouds.size(); ++i)
+	{
+		*merged_cloud += *filtered_clouds[i];
+	}
+	printf("Written merged point clouds into file 'merged.pcd'.\n");
+	pcl::io::savePCDFileASCII ("merged.pcd", *merged_cloud);
+
+
 	while(!viewer->wasStopped())
 	{
 		viewer->spinOnce(100);
 		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 	}
+
+	// combine all point clouds and write them into one merged point cloud file
+	
+
 
 	return 0;
 }
