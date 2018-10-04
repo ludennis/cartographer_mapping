@@ -12,15 +12,26 @@
 #include <boost/thread/thread.hpp>
 
 #include <pcl/io/pcd_io.h>
-#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/registration/icp.h>
 #include <pcl/common/transforms.h>
 #include <pcl/common/common.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
 
 // global variables
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> quadrilaterals;
+bool enterKeyPressed = false;
+
+void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event)
+{
+	if ( event.getKeyCode() == 13)
+	{
+		enterKeyPressed = true;
+		printf("Enter Key pressed!\n");
+	}
+}
 
 // callback function to output clicked point's xyz coordinate
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
@@ -70,6 +81,7 @@ int main(int argc, char** argv)
 	// register viewer with mouse events and point clicking events
 	viewer->registerPointPickingCallback (pointPickingOccurred);
 
+	viewer->registerKeyboardCallback (keyboardEventOccurred);
 	for (int i = 1; i < argc; ++i)
 	{
 		// clear all previously loaded point clouds
@@ -106,6 +118,15 @@ int main(int argc, char** argv)
 
 	// calculate how to map all into the same coordinate with quadrilaterals vector
 	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+	// wait until enter key pressed before matching
+	enterKeyPressed = false;
+	printf("Press Enter Key to start matching ...\n");
+	while(!enterKeyPressed)
+	{
+		viewer->spinOnce(100);
+		boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+	}
+
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_source (new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_target (new pcl::PointCloud<pcl::PointXYZ>);
