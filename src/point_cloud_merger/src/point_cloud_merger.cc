@@ -18,6 +18,22 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+class Line
+{
+public:
+	float slope, intersect;
+	Line(){}
+	Line(float slope, float intersect)	
+	{
+		this->slope = slope;
+		this->intersect = intersect;
+	}
+	Line(pcl::PointXYZ pt1, pcl::PointXYZ pt2)
+	{
+		this->slope = (pt1.y - pt2.y) / (pt1.x - pt2.x);
+		this->intersect = pt1.y - this->slope * pt1.x;
+	}
+};
 
 // global variables
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cloud_pointers;
