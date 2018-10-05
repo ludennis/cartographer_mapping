@@ -48,9 +48,7 @@ int main(int argc, char** argv)
 		pcl::io::loadPCDFile<pcl::PointXYZ>(argv[i], *cloud);
 
 		// add point cloud into viewer
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, rand() %255,
-																							rand() %255,
-																							rand() % 255);
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, 255, 255, 255);
 		viewer->addPointCloud<pcl::PointXYZ> (cloud, single_color, argv[i]);
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i]);
 		viewer->initCameraParameters ();
