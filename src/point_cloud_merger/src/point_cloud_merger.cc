@@ -72,11 +72,32 @@ void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 pcl::PointCloud<pcl::PointXYZ> getPointsWithin (const pcl::PointCloud<pcl::PointXYZ>::Ptr source,
 												const pcl::PointCloud<pcl::PointXYZ>::Ptr quadruple)
 {
+	// get centroid of the quad
+	float x_sum(0.0f), y_sum(0.0f), z_sum(0.0f);
+	for ( size_t i = 0 ; i < quadruple->points.size() ; ++i)
+	{
+		x_sum += quadruple->points[i].x;
+		y_sum += quadruple->points[i].y;
+		z_sum += quadruple->points[i].z;
+	}
+
+	float x_avg(x_sum/4.0f), y_avg(y_sum/4.0f), z_avg(z_sum/4.0f);
+
 	// get the 4 lines from the 4 points in quadruple (tl = top left, br = bottom right)
-	Line line_tl_tr( quadruple->points[0] , quadruple->points[1] );
-	Line line_tr_br( quadruple->points[1] , quadruple->points[2] );
-	Line line_br_bl( quadruple->points[2] , quadruple->points[3] );
-	Line line_bl_tl( quadruple->points[3] , quadruple->points[0] );
+	Line top( quadruple->points[0] , quadruple->points[1] );
+	Line right( quadruple->points[1] , quadruple->points[2] );
+	Line down( quadruple->points[2] , quadruple->points[3] );
+	Line left( quadruple->points[3] , quadruple->points[0] );
+	
+	printf ("top.slope: %f, top.intersect: %f\n", top.slope, top.intersect);
+	printf ("right.slope: %f, right.intersect: %f\n", right.slope, right.intersect);
+	printf ("down.slope: %f, down.intersect: %f\n", down.slope, down.intersect);
+	printf ("left.slope: %f, left.intersect: %f\n", left.slope, left.intersect);
+	
+	printf ("y_avg(%f) = %f (top)\n", y_avg, x_avg * top.slope + top.intersect);
+	printf ("y_avg(%f) = %f (right)\n", y_avg, x_avg * right.slope + right.intersect);
+	printf ("y_avg(%f) = %f (down)\n", y_avg, x_avg * down.slope + down.intersect);
+	printf ("y_avg(%f) = %f (left)\n", y_avg, x_avg * left.slope + left.intersect);
 
 	for ( size_t i = 0; i < quadruple->points.size(); ++i)
 	{
@@ -84,22 +105,15 @@ pcl::PointCloud<pcl::PointXYZ> getPointsWithin (const pcl::PointCloud<pcl::Point
 			quadruple->points[i].y, quadruple->points[i].z);
 	}
 	
-	printf ("line_tl_tr: slope = %f, intersect = %f\n", line_tl_tr.slope, line_tl_tr.intersect);
-
 	pcl::PointCloud<pcl::PointXYZ>::Ptr source_extracted (new pcl::PointCloud<pcl::PointXYZ>);
 	for ( size_t i = 0; i < source->points.size(); ++i)
 	{
 		float x = source->points[i].x, y = source->points[i].y;
-		
-		if ((	y < line_tl_tr.slope * x + line_tl_tr.intersect and
-				y > line_br_bl.slope * x + line_br_bl.intersect and
-				y < line_tr_br.slope * x + line_tr_br.intersect and
-				y > line_bl_tl.slope * x + line_bl_tl.intersect)
-			or
-			(	y >= line_tl_tr.slope * x + line_tl_tr.intersect and
-				y <= line_br_bl.slope * x + line_br_bl.intersect and
-				y >= line_tr_br.slope * x + line_tr_br.intersect and 
-				y <= line_bl_tl.slope * x + line_bl_tl.intersect))
+
+		if (( ((y < top.slope * x + top.intersect) == (y_avg < top.slope * x_avg + top.intersect)) and
+			  ((y < down.slope * x + down.intersect) == (y_avg < down.slope * x_avg + down.intersect)) and
+			  ((y < right.slope * x + right.intersect) == (y_avg < right.slope * x_avg + right.intersect)) and
+			  ((y < left.slope * x + left.intersect) == (y_avg < left.slope * x_avg + left.intersect)) ))
 		{
 			source_extracted->points.push_back(source->points[i]);
 		}	
