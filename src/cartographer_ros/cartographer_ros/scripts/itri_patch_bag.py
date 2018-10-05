@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser(description='Patch ITRI datasets.')
 parser.add_argument('infile', metavar='in.bag')
 parser.add_argument('lidar_input_topic')
 args = parser.parse_args()
-outfile = args.infile[:-4] + "-imu-fixed.bag"
+outfile = args.infile[:-4] + "-patched.bag"
 print("Writing patched bag file to " + outfile)
 
 smooth_queue_x_ang_vel = []
