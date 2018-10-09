@@ -49,7 +49,7 @@ TRAJECTORY_BUILDER_3D.ceres_scan_matcher.translation_weight = 5.
 TRAJECTORY_BUILDER_3D.ceres_scan_matcher.rotation_weight = 5.
 
 TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 1
---TRAJECTORY_BUILDER_3D.min_range = 2
+TRAJECTORY_BUILDER_3D.min_range = 5
 TRAJECTORY_BUILDER_3D.max_range = 400.
 --TRAJECTORY_BUILDER_3D.imu_gravity_time_constant = 100
 -- TRAJECTORY_BUILDER_3D.voxel_filter_size = 0.02
