@@ -17,10 +17,12 @@
 #include <pcl/common/transforms.h>
 #include <pcl/common/common.h>
 
+typedef pcl::PointXYZRGBA PointT;
+
 // callback function to output clicked point's xyz coordinate
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
-	pcl::PointXYZ point_clicked;
+	PointT point_clicked;
 	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
 	printf("Point index %i at (%f, %f, %f) was clicked.\n", event.getPointIndex(), point_clicked.x,
 																				   point_clicked.y,
@@ -44,12 +46,12 @@ int main(int argc, char** argv)
 	for (int i = 1; i < argc; ++i)
 	{
 		// load point cloud file and add to vector
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-		pcl::io::loadPCDFile<pcl::PointXYZ>(argv[i], *cloud);
+		pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
+		pcl::io::loadPCDFile<PointT>(argv[i], *cloud);
 
 		// add point cloud into viewer
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, 255, 255, 255);
-		viewer->addPointCloud<pcl::PointXYZ> (cloud, single_color, argv[i]);
+		pcl::visualization::PointCloudColorHandlerRGBAField<PointT> rgba(cloud);
+		viewer->addPointCloud<PointT> (cloud, rgba, argv[i]);
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i]);
 		viewer->initCameraParameters ();
 	}
