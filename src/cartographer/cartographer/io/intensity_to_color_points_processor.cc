@@ -53,7 +53,16 @@ void IntensityToColorPointsProcessor::Process(
       const float gray = cartographer::common::Clamp(
           (intensity - min_intensity_) / (max_intensity_ - min_intensity_), 0.f,
           1.f);
-      batch->colors.push_back({{gray, gray, gray}});
+
+          static float max_intensity =  -100;
+          if (intensity > max_intensity)
+          {
+              max_intensity =  intensity;
+              std::cout <<  "max_intensity = "<< max_intensity << " gray = "<< gray << std::endl;
+          }
+
+      batch->intensities.push_back({gray});
+
     }
   }
   next_->Process(std::move(batch));

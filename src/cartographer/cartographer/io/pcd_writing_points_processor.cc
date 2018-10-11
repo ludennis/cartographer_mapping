@@ -34,8 +34,8 @@ namespace {
 // 'output_file'.
 void WriteBinaryPcdHeader(const bool has_color, const int64 num_points,
                           FileWriter* const file_writer) {
-  std::string color_header_field = !has_color ? "" : " rgb";
-  std::string color_header_type = !has_color ? "" : " U";
+  std::string color_header_field = !has_color ? "" : " intensity";
+  std::string color_header_type = !has_color ? "" : " F";
   std::string color_header_size = !has_color ? "" : " 4";
   std::string color_header_count = !has_color ? "" : " 1";
 
@@ -72,6 +72,13 @@ void WriteBinaryPcdPointColor(const Uint8Color& color,
   buffer[1] = color[1];
   buffer[2] = color[0];
   buffer[3] = 0;
+  CHECK(file_writer->Write(buffer, 4));
+}
+
+void WriteBinaryPcdPointIntensity(const float& intensity,
+                              FileWriter* const file_writer) {
+  char buffer[12];
+  memcpy(buffer, &intensity, sizeof(float));
   CHECK(file_writer->Write(buffer, 4));
 }
 
@@ -115,14 +122,14 @@ void PcdWritingPointsProcessor::Process(std::unique_ptr<PointsBatch> batch) {
   }
 
   if (num_points_ == 0) {
-    has_colors_ = !batch->colors.empty();
+    has_colors_ = !batch->intensities.empty();
     WriteBinaryPcdHeader(has_colors_, 0, file_writer_.get());
   }
   for (size_t i = 0; i < batch->points.size(); ++i) {
     WriteBinaryPcdPointCoordinate(batch->points[i], file_writer_.get());
-    if (!batch->colors.empty()) {
-      WriteBinaryPcdPointColor(ToUint8Color(batch->colors[i]),
-                               file_writer_.get());
+    if (!batch->intensities.empty()) {
+        WriteBinaryPcdPointIntensity(batch->intensities[i],
+                                 file_writer_.get());
     }
     ++num_points_;
   }
