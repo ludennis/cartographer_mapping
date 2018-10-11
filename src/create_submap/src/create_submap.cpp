@@ -13,7 +13,7 @@ Chun-Te
 #include <pcl/common/common.h>
 #include <pcl/filters/voxel_grid.h>
 
-typedef pcl::PointXYZ PointT;
+typedef pcl::PointXYZI PointT;
 #define submapXYSize 100
 
 int main (int argc, char** argv)
@@ -34,7 +34,7 @@ int main (int argc, char** argv)
         return -1;
     }
 
-    pcl::PointXYZ minPt, maxPt;
+    PointT minPt, maxPt;
     pcl::getMinMax3D (*inputCloud, minPt, maxPt);
     std::cout << "Max x: " << maxPt.x << std::endl;
     std::cout << "Max y: " << maxPt.y << std::endl;
