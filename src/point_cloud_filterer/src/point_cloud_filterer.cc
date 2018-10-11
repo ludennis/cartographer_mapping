@@ -8,6 +8,8 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 
+typedef pcl::PointXYZRGBA PointT;
+
 int main(int argc, char** argv)
 {
 	for (int i = 0; i < argc; ++i)
@@ -23,8 +25,8 @@ int main(int argc, char** argv)
 		printf("Voxel leaf size is set to: %f\n", voxel_leaf_size);
 	
 		// load pcd file
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_source (new pcl::PointCloud<pcl::PointXYZ>);
-		if (pcl::io::loadPCDFile<pcl::PointXYZ> (argv[i], *cloud_source) == -1)
+		pcl::PointCloud<PointT>::Ptr cloud_source (new pcl::PointCloud<PointT>);
+		if (pcl::io::loadPCDFile<PointT> (argv[i], *cloud_source) == -1)
 		{
 			PCL_ERROR ("Couldn't read file %s.\n", argv[i]);
 			return -1;
@@ -34,8 +36,8 @@ int main(int argc, char** argv)
 																		cloud_source->height); 
 
 		// downsample with voxel grid filter
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
-		pcl::VoxelGrid<pcl::PointXYZ> vg_filter;
+		pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
+		pcl::VoxelGrid<PointT> vg_filter;
 		vg_filter.setInputCloud(cloud_source);
 		vg_filter.setLeafSize (voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
 		vg_filter.filter (*cloud_filtered);
