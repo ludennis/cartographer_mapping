@@ -36,6 +36,8 @@ int main(int argc, char** argv)
 		printf("argv[%i]: %s\n", i, argv[i]);
 	}
 
+	float opacity = atof(argv[1]);
+
 	// creates PCL visualizer to view the point cloud
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer("3D Viewer"));
 	viewer->setBackgroundColor(0,0,0);
@@ -43,16 +45,17 @@ int main(int argc, char** argv)
 	// register viewer with mouse events and point clicking events
 	viewer->registerPointPickingCallback (pointPickingOccurred);
 
-	for (int i = 1; i < argc; ++i)
+	for (int i = 2; i < argc; ++i)
 	{
 		// load point cloud file and add to vector
 		pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
 		pcl::io::loadPCDFile<PointT>(argv[i], *cloud);
 
 		// add point cloud into viewer
-		pcl::visualization::PointCloudColorHandlerRGBAField<PointT> rgba(cloud);
-		viewer->addPointCloud<PointT> (cloud, rgba, argv[i]);
+		pcl::visualization::PointCloudColorHandlerCustom<PointT> color_white(cloud,255,255,255);
+		viewer->addPointCloud<PointT> (cloud, color_white, argv[i]);
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i]);
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY,opacity, argv[i]);
 		viewer->initCameraParameters ();
 	}
 
