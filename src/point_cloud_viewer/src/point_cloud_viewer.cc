@@ -34,7 +34,7 @@ void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 
 int main(int argc, char** argv)
 {
-	for (int i = 0; i < argc; ++i)
+	if (argc < 3)
 	{
 		ROS_ERROR("Usage: point_cloud_viewer [opacity] [map_filename_1] [map_filename_2] [...]");
 		return -1;
