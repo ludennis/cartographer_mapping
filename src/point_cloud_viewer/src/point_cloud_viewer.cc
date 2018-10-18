@@ -19,11 +19,12 @@
 #include <pcl/common/transforms.h>
 #include <pcl/common/common.h>
 
-typedef pcl::PointXYZRGBA PointT;
+typedef pcl::PointXYZI PointT;
 
 // callback function to output clicked point's xyz coordinate
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
+
 	PointT point_clicked;
 	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
 	ROS_INFO("Point index %i at (x=%f, y=%f, z=%f, intensity=%f) was clicked.\n",
@@ -55,8 +56,9 @@ int main(int argc, char** argv)
 		pcl::io::loadPCDFile<PointT>(argv[i], *cloud);
 
 		// add point cloud into viewer
-		pcl::visualization::PointCloudColorHandlerCustom<PointT> color_white(cloud,255,255,255);
-		viewer->addPointCloud<PointT> (cloud, color_white, argv[i]);
+		pcl::visualization::PointCloudColorHandlerGenericField<PointT> intensity(cloud, "intensity");
+		// pcl::visualization::PointCloudColorHandlerCustom<PointT> color_white(cloud,255,255,255);
+		viewer->addPointCloud<PointT> (cloud, intensity, argv[i]);
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i]);
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY,opacity, argv[i]);
 		viewer->initCameraParameters ();
