@@ -9,6 +9,8 @@
 #include <iostream>
 #include <vector>
 
+#include <ros/ros.h>
+
 #include <boost/thread/thread.hpp>
 
 #include <pcl/io/pcd_io.h>
@@ -24,16 +26,17 @@ void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
 	PointT point_clicked;
 	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
-	printf("Point index %i at (%f, %f, %f) was clicked.\n", event.getPointIndex(), point_clicked.x,
-																				   point_clicked.y,
-																				   point_clicked.z);
+	ROS_INFO("Point index %i at (x=%f, y=%f, z=%f, intensity=%f) was clicked.\n",
+		event.getPointIndex(), point_clicked.x,	point_clicked.y, point_clicked.z,
+		point_clicked.i);
 }
 
 int main(int argc, char** argv)
 {
 	for (int i = 0; i < argc; ++i)
 	{
-		printf("argv[%i]: %s\n", i, argv[i]);
+		ROS_ERROR("Usage: point_cloud_viewer [opacity] [map_filename_1] [map_filename_2] [...]");
+		return -1;
 	}
 
 	float opacity = atof(argv[1]);
