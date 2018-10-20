@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #include <ros/ros.h>
 #include <rosbag/bag.h>
@@ -51,6 +52,8 @@ int main (int argc, char** argv)
 
     pcl::PassThrough<PointT> pass_filter;
     rosbag::View view(read_bag, rosbag::TopicQuery(topics));
+
+    auto start = std::chrono::system_clock::now();
 
     PointCloudTPtr total_filtered_cloud_ptr (new PointCloudT);
 
@@ -131,6 +134,9 @@ int main (int argc, char** argv)
     for (size_t i = 0; i < max_intensity; ++i)
         ROS_INFO ("Intensity[%ld]: %d", i, intensity_counts[i]);
 
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    ROS_INFO ("Time Elapsed: %f seconds", elapsed_seconds.count());
     ROS_INFO ("Wrote to filename '%s' with height_threshold(%f, %f) and intensity "
         "threshold (%f, %f)", write_bag_filename, height_low_pass,
         height_high_pass, intensity_low_pass, intensity_high_pass);
