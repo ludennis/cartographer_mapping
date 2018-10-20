@@ -20,16 +20,18 @@
 #include <pcl/common/common.h>
 
 typedef pcl::PointXYZI PointT;
+typedef pcl::PointCloud<PointT> PointCloudT;
+typedef pcl::PointCloud<PointT>::Ptr PointCloudTPtr;
+
+PointCloudTPtr map_cloud_ptr (new PointCloudT);
 
 // callback function to output clicked point's xyz coordinate
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
-
-	PointT point_clicked;
-	event.getPoint(point_clicked.x, point_clicked.y, point_clicked.z);
+	PointT point_clicked (map_cloud_ptr->points[event.getPointIndex()]);
 	ROS_INFO("Point index %i at (x=%f, y=%f, z=%f, intensity=%f) was clicked.\n",
 		event.getPointIndex(), point_clicked.x,	point_clicked.y, point_clicked.z,
-		point_clicked.i);
+		point_clicked.intensity);
 }
 
 int main(int argc, char** argv)
@@ -55,14 +57,17 @@ int main(int argc, char** argv)
 		pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
 		pcl::io::loadPCDFile<PointT>(argv[i], *cloud);
 
-		// add point cloud into viewer
-		pcl::visualization::PointCloudColorHandlerGenericField<PointT> intensity(cloud, "intensity");
-		// pcl::visualization::PointCloudColorHandlerCustom<PointT> color_white(cloud,255,255,255);
-		viewer->addPointCloud<PointT> (cloud, intensity, argv[i]);
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, argv[i]);
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY,opacity, argv[i]);
-		viewer->initCameraParameters ();
+		*map_cloud_ptr += *cloud;
+
 	}
+
+	// add point cloud into viewer
+	pcl::visualization::PointCloudColorHandlerGenericField<PointT> intensity(map_cloud_ptr, "intensity");
+	// pcl::visualization::PointCloudColorHandlerCustom<PointT> color_white(cloud,255,255,255);
+	viewer->addPointCloud<PointT> (map_cloud_ptr, intensity, "map_cloud");
+	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "map_cloud");
+	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY,opacity, "map_cloud");
+
 
 	while(!viewer->wasStopped())
 	{
