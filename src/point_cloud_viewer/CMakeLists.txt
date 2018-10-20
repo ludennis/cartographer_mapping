@@ -27,7 +27,6 @@ SET(CMAKE_CXX_FLAGS "--std=c++11 -O2 -Wall -g ${CMAKE_CXX_FLAGS}")
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cc)
+add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-
