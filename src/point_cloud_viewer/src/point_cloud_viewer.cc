@@ -1,11 +1,3 @@
-/*
-	Views each input point cloud and merge them with ICP matching
-		1. select 2 points from each point cloud (with shift + left-click) that has overlap
-		2. preview all point clouds before performing ICP matching
-		3. perform ICP matching
-		4. Done
-*/
-
 #include <iostream>
 #include <vector>
 
@@ -25,7 +17,6 @@ typedef pcl::PointCloud<PointT>::Ptr PointCloudTPtr;
 
 PointCloudTPtr map_cloud_ptr (new PointCloudT);
 
-// callback function to output clicked point's xyz coordinate
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
 	PointT point_clicked (map_cloud_ptr->points[event.getPointIndex()]);
@@ -41,33 +32,24 @@ int main(int argc, char** argv)
 		ROS_ERROR("Usage: point_cloud_viewer [opacity] [map_filename_1] [map_filename_2] [...]");
 		return -1;
 	}
-
 	float opacity = atof(argv[1]);
 
-	// creates PCL visualizer to view the point cloud
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer("3D Viewer"));
 	viewer->setBackgroundColor(0,0,0);
-
-	// register viewer with mouse events and point clicking events
 	viewer->registerPointPickingCallback (pointPickingOccurred);
 
 	for (int i = 2; i < argc; ++i)
 	{
-		// load point cloud file and add to vector
 		pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
 		pcl::io::loadPCDFile<PointT>(argv[i], *cloud);
 
 		*map_cloud_ptr += *cloud;
-
 	}
 
-	// add point cloud into viewer
 	pcl::visualization::PointCloudColorHandlerGenericField<PointT> intensity(map_cloud_ptr, "intensity");
-	// pcl::visualization::PointCloudColorHandlerCustom<PointT> color_white(cloud,255,255,255);
 	viewer->addPointCloud<PointT> (map_cloud_ptr, intensity, "map_cloud");
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "map_cloud");
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY,opacity, "map_cloud");
-
 
 	while(!viewer->wasStopped())
 	{
