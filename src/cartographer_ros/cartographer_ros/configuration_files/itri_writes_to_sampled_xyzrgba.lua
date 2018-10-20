@@ -18,25 +18,17 @@ options = {
   tracking_frame = "base_imu",
   pipeline = {
     {
-      action = "fixed_ratio_sampler",
-      sampling_ratio = 0.05,
-    },
-
-    {
-        action = "motion_filter",
-        filter_speed_kmph = 1.0,
-        filter_distance = 0.1,
+        action = "min_max_range_filter",
+        min_range = 5.,
+        max_range = 200.,
     },
     {
-        action = "intensity_to_color",
-        min_intensity = 0.,
-        max_intensity = 256.,
+        action = "fixed_ratio_sampler",
+        sampling_ratio = 0.05,
     },
-
     {
-      --action = "grid_map_write_pcd",
-      action = "write_pcd",
-      filename = "points.pcd",
+        action = "write_pcd",
+        filename = "points.pcd",
     },
   }
 }
