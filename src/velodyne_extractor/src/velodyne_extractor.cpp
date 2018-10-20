@@ -44,6 +44,10 @@ int main (int argc, char** argv)
     topics.push_back(std::string("/fix"));
     topics.push_back(std::string("/imu/data"));
 
+    rosbag::Bag write_bag;
+    char write_bag_filename[512];
+    sprintf(write_bag_filename, "%s-velodyne-extracted", read_bag_filename);
+    write_bag.open(write_bag_filename, rosbag::bagmode::Write);
 
     pcl::PassThrough<PointT> pass_filter;
     rosbag::View view(read_bag, rosbag::TopicQuery(topics));
@@ -105,7 +109,13 @@ int main (int argc, char** argv)
             pcl::toROSMsg (*cloud_ptr, filtered_pc2_msg);
 
             *total_filtered_cloud_ptr += *cloud_ptr;
+            write_bag.write("/velodyne_points", msg_time, filtered_pc2_msg);
         }
+
+        if ( fix_msg != NULL )
+            write_bag.write("/fix", msg_time, *fix_msg);
+        if ( imu_msg != NULL )
+            write_bag.write("/imu/data", msg_time, *imu_msg);
     }
 
     size_t max_intensity = 256;
@@ -120,6 +130,10 @@ int main (int argc, char** argv)
 
     for (size_t i = 0; i < max_intensity; ++i)
         ROS_INFO ("Intensity[%ld]: %d", i, intensity_counts[i]);
+
+    ROS_INFO ("Wrote to filename '%s' with height_threshold(%f, %f) and intensity "
+        "threshold (%f, %f)", write_bag_filename, height_low_pass,
+        height_high_pass, intensity_low_pass, intensity_high_pass);
 
     return 0;
 }
