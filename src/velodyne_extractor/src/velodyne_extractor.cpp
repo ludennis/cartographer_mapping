@@ -6,9 +6,12 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/Imu.h>
+#include <tf/transform_datatypes.h>
 
 #include <pcl/common/common.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl_ros/transforms.h>
 
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
@@ -41,6 +44,8 @@ int main (int argc, char** argv)
     topics.push_back(std::string("/fix"));
     topics.push_back(std::string("/imu/data"));
 
+
+    pcl::PassThrough<PointT> pass_filter;
     rosbag::View view(read_bag, rosbag::TopicQuery(topics));
 
     foreach (rosbag::MessageInstance const m, view)
@@ -59,6 +64,43 @@ int main (int argc, char** argv)
             pcl::PCLPointCloud2 pcl_pc2;
             pcl_conversions::toPCL(*pc2_msg, pcl_pc2);
             pcl::fromPCLPointCloud2(pcl_pc2, *cloud_ptr);
+
+            tf::Transform transform, transform_inverse;
+            if(strcmp("cpev29", vehicle)==0)
+            {
+                transform.setOrigin(tf::Vector3(1.2, 0.0, 1.0));
+                tf::Quaternion q;
+                q.setRPY(0.005, 0.14, 0.0);
+                transform.setRotation(q);
+            } else if(strcmp("cpev9", vehicle)==0)
+            {
+                transform.setOrigin(tf::Vector3(0.0, 0.0, 1.5));
+                tf::Quaternion q;
+                q.setRPY(0.0, 0.02, 0.0);
+                transform.setRotation(q);
+            }
+            pcl_ros::transformPointCloud(*cloud_ptr, *cloud_ptr, transform);
+
+            ROS_INFO ("Number of points before filtering: %ld points",
+                cloud_ptr->points.size());
+
+            pass_filter.setInputCloud(cloud_ptr);
+            pass_filter.setFilterFieldName("intensity");
+            pass_filter.setFilterLimits(intensity_low_pass, intensity_high_pass);
+            pass_filter.filter(*cloud_ptr);
+
+            pass_filter.setInputCloud(cloud_ptr);
+            pass_filter.setFilterFieldName("z");
+            pass_filter.setFilterLimits(height_low_pass, height_high_pass);
+            pass_filter.filter(*cloud_ptr);
+
+            ROS_INFO ("Number of points after filtering: %ld points",
+                cloud_ptr->points.size());
+
+            transform_inverse = transform.inverse();
+            pcl_ros::transformPointCloud (*cloud_ptr, *cloud_ptr, transform_inverse);
+            sensor_msgs::PointCloud2 filtered_pc2_msg;
+            pcl::toROSMsg (*cloud_ptr, filtered_pc2_msg);
         }
     }
 
