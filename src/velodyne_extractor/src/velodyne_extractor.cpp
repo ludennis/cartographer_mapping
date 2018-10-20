@@ -48,6 +48,8 @@ int main (int argc, char** argv)
     pcl::PassThrough<PointT> pass_filter;
     rosbag::View view(read_bag, rosbag::TopicQuery(topics));
 
+    PointCloudTPtr total_filtered_cloud_ptr (new PointCloudT);
+
     foreach (rosbag::MessageInstance const m, view)
     {
         ros::Time msg_time = m.getTime();
@@ -101,8 +103,23 @@ int main (int argc, char** argv)
             pcl_ros::transformPointCloud (*cloud_ptr, *cloud_ptr, transform_inverse);
             sensor_msgs::PointCloud2 filtered_pc2_msg;
             pcl::toROSMsg (*cloud_ptr, filtered_pc2_msg);
+
+            *total_filtered_cloud_ptr += *cloud_ptr;
         }
     }
+
+    size_t max_intensity = 256;
+    int intensity_counts[max_intensity];
+    std::fill_n(intensity_counts, max_intensity, 0);
+
+    for (size_t i = 0; i < total_filtered_cloud_ptr->points.size(); ++i)
+    {
+        PointT point = total_filtered_cloud_ptr->points[i];
+        intensity_counts[(int)point.intensity]++;
+    }
+
+    for (size_t i = 0; i < max_intensity; ++i)
+        ROS_INFO ("Intensity[%ld]: %d", i, intensity_counts[i]);
 
     return 0;
 }
