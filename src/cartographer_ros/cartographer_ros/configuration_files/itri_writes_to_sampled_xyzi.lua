@@ -19,7 +19,7 @@ options = {
   pipeline = {
     {
         action = "fixed_ratio_sampler",
-        sampling_ratio = 0.05,
+        sampling_ratio = 0.20,
     },
     {
         action = "motion_filter",
