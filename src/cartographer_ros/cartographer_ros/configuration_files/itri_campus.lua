@@ -22,8 +22,8 @@ options = {
   tracking_frame = "base_imu",
   published_frame = "base_link",
   odom_frame = "odom",
-  provide_odom_frame = true,
-  use_nav_sat = false,
+  provide_odom_frame = false,
+  use_nav_sat = true,
   use_odometry = false,
   num_laser_scans = 0,
   num_multi_echo_laser_scans = 0,
@@ -49,7 +49,7 @@ TRAJECTORY_BUILDER_3D.ceres_scan_matcher.translation_weight = 5.
 TRAJECTORY_BUILDER_3D.ceres_scan_matcher.rotation_weight = 5.
 
 TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 1
---TRAJECTORY_BUILDER_3D.min_range = 2
+TRAJECTORY_BUILDER_3D.min_range = 5
 TRAJECTORY_BUILDER_3D.max_range = 400.
 --TRAJECTORY_BUILDER_3D.imu_gravity_time_constant = 100
 -- TRAJECTORY_BUILDER_3D.voxel_filter_size = 0.02
@@ -63,27 +63,27 @@ TRAJECTORY_BUILDER_3D.max_range = 400.
 
 
 
-TRAJECTORY_BUILDER_3D.submaps.high_resolution = 0.2
-TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 30.
-TRAJECTORY_BUILDER_3D.submaps.low_resolution = 0.8
---TRAJECTORY_BUILDER_3D.submaps.num_range_data = 300.
+-- TRAJECTORY_BUILDER_3D.submaps.high_resolution = 0.2
+TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 50.
+-- TRAJECTORY_BUILDER_3D.submaps.low_resolution = 0.8
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 100.
 
 POSE_GRAPH.optimize_every_n_nodes = 320
 POSE_GRAPH.global_sampling_ratio = 0.003
 POSE_GRAPH.global_constraint_search_after_n_seconds = 10
 --POSE_GRAPH.matcher_translation_weight = 15
---POSE_GRAPH.matcher_rotation_weight = 2.2e5 --default at 1.6e3
+-- POSE_GRAPH.matcher_rotation_weight = 4.0e5 --default at 1.6e3
 
 POSE_GRAPH.constraint_builder.global_localization_min_score = 0.5
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.03
-POSE_GRAPH.constraint_builder.min_score = 0.5 -- 0.62 for fast correlative scan matcher
+POSE_GRAPH.constraint_builder.min_score = 0.6 -- 0.62 for fast correlative scan matcher
 --POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2.2e4
 POSE_GRAPH.constraint_builder.max_constraint_distance = 5 -- for local constraints
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_xy_search_window = 5
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 20
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(5.)
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.min_rotational_score = 0.6 -- 0.5
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.min_low_resolution_score = 0.3
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 5
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(1.)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.min_rotational_score = 0.8 -- 0.5
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.min_low_resolution_score = 0.6
 
 
 --POSE_GRAPH.optimization_problem.acceleration_weight = 0.00001 -- IMU
@@ -91,7 +91,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.min_low_resolutio
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
 POSE_GRAPH.optimization_problem.log_solver_summary = true
 POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 50
-POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 5
+POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 100
 POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 0
 
 return options
