@@ -27,6 +27,7 @@ imu_smoothing = False
 with Bag(outfile, 'w') as fout:
     for topic, msg, t in Bag(args.infile):
         if topic == args.lidar_input_topic:
+            msg.header.frame_id = 'velodyne'
             fout.write(topic, msg, t)
         if topic == '/nmea_sentence':
             if msg.sentence.split(',')[0] == '$GPGGA' and msg.sentence.split(',')[6] >= '4':
