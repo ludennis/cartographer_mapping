@@ -28,7 +28,7 @@ options = {
     },
     {
         action = "write_pcd",
-        filename = "points.pcd",
+        filename = "sampled.pcd",
     },
   }
 }

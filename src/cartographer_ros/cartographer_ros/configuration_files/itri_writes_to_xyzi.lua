@@ -35,7 +35,7 @@ options = {
     {
         --action = "grid_map_write_pcd",
         action = "write_pcd",
-        filename = "points.pcd",
+        filename = "full.pcd",
     },
   }
 }
