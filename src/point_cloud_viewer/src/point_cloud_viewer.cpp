@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include <ros/ros.h>
 
+#include <boost/program_options.hpp>
 #include <boost/thread/thread.hpp>
 
 #include <pcl/io/pcd_io.h>
@@ -14,8 +16,12 @@
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef pcl::PointCloud<PointT>::Ptr PointCloudTPtr;
+namespace boost_po = boost::program_options;
 
 PointCloudTPtr map_cloud_ptr (new PointCloudT);
+
+std::vector<std::string> map_filenames;
+double opacity;
 
 void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 {
@@ -27,21 +33,53 @@ void pointPickingOccurred (const pcl::visualization::PointPickingEvent &event)
 
 int main(int argc, char** argv)
 {
-    if (argc < 3)
+    boost_po::options_description descriptions{"Allowed options"};
+    descriptions.add_options()
+        ("help", "produce help message")
+        ("opacity", boost_po::value<double>()->default_value(1.0),
+            "set opacity(alpha) value")
+        ("map-filenames", boost_po::value<std::vector<std::string>>()->multitoken(),
+            "map filename(s)");
+
+    boost_po::variables_map var_map;
+    boost_po::store(boost_po::parse_command_line(argc, argv, descriptions), var_map);
+    boost_po::notify(var_map);
+
+    if(var_map.count("help"))
     {
-        ROS_ERROR("Usage: point_cloud_viewer [opacity] [map_filename_1] [map_filename_2] [...]");
+        ROS_INFO_STREAM(std::endl << descriptions);
+        return 1;
+    }
+
+    if (var_map.count("opacity"))
+    {
+        ROS_INFO_STREAM("Opacity set to: " << var_map["opacity"].as<double>());
+        opacity = var_map["opacity"].as<double>();
+    }
+
+    if (var_map.count("map-filenames"))
+    {
+        map_filenames = var_map["map-filenames"].as<std::vector<std::string>>();
+
+        for(auto itr = map_filenames.begin(); itr != map_filenames.end(); ++itr)
+        {
+            ROS_INFO_STREAM("Map filenames: " << *itr);
+        }
+    }
+    else
+    {
+        ROS_ERROR("No map files given, exiting");
         return -1;
     }
-    float opacity = atof(argv[1]);
 
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer("3D Viewer"));
     viewer->setBackgroundColor(0,0,0);
     viewer->registerPointPickingCallback (pointPickingOccurred);
 
-    for (int i = 2; i < argc; ++i)
+    for (auto itr = map_filenames.begin(); itr != map_filenames.end(); ++itr)
     {
         pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
-        pcl::io::loadPCDFile<PointT>(argv[i], *cloud);
+        pcl::io::loadPCDFile<PointT>(*itr, *cloud);
 
         *map_cloud_ptr += *cloud;
     }
