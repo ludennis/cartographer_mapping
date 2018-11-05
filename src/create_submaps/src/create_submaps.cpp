@@ -14,6 +14,8 @@ Chun-Te
 #include <pcl/filters/voxel_grid.h>
 
 typedef pcl::PointXYZI PointT;
+typedef pcl::PointCloud<PointT> PointCloudT;
+typedef PointCloudT::Ptr PointCloudTPtr;
 
 int main (int argc, char** argv)
 {
@@ -29,12 +31,10 @@ int main (int argc, char** argv)
 
     int gridSizeX = 200;
     int gridSizeY = 200;
-    pcl::PointCloud<PointT>::Ptr inputCloud (new pcl::PointCloud<PointT>);
-    pcl::PointCloud<PointT> submaps[submapXYSize][submapXYSize];
-
-    int ret = pcl::io::loadPCDFile (argv[2], *inputCloud);
-    if (ret < 0) {
-        PCL_ERROR("Couldn't read file %s\n", argv[1]);
+    PointCloudTPtr inputCloud (new PointCloudT);
+    if(pcl::io::loadPCDFile(filename, *inputCloud) == -1)
+    {
+        PCL_ERROR("Couldn't read file %s\n", filename);
         return -1;
     }
 
