@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 
     while(!viewer->wasStopped())
     {
-        viewer->spinOnce(100);
+        viewer->spin();
         boost::this_thread::sleep (boost::posix_time::microseconds (100000));
     }
 
