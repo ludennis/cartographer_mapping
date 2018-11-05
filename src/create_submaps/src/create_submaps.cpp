@@ -11,7 +11,6 @@ Chun-Te
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
-#include <pcl/filters/voxel_grid.h>
 
 #include "boost/multi_array.hpp"
 
@@ -69,29 +68,24 @@ int main (int argc, char** argv)
         {
             if(submaps[x][y].size() > 0)
             {
-                // save to PCD file
                 submaps[x][y].width = (int) submaps[x][y].points.size();
                 submaps[x][y].height = 1;
-                printf ("submaps[%d][%d]: points.size() = %ld, width = %d, height = %d, is_dense = %d\n",
-				    x, y, submaps[x][y].points.size(), submaps[x][y].width, submaps[x][y].height,
-				    submaps[x][y].is_dense);
-                char filename[100];
-                sprintf(filename,"./submap_%d_%d.pcd",x-submapXYSize/2,  y-submapXYSize/2);
+                printf("submaps[%d][%d]: points.size() = %ld, width = %d, "
+                    "height = %d, is_dense = %d\n", x, y, submaps[x][y].points.size(),
+                    submaps[x][y].width, submaps[x][y].height, submaps[x][y].is_dense);
+                char submap_filename[100];
+                sprintf(submap_filename, "./submap_%d_%d.pcd", x, y);
 
-			    if ( strcmp( argv[1], "ascii") == 0 )
-			    {
-                    if(pcl::io::savePCDFileASCII(filename, submaps[x][y]) == -1)
-                    {
-                        std::cout << "Failed saving " << filename << "." << std::endl;
-                    }
+                if(strcmp(file_format, "ascii") == 0)
+                {
+                    if(pcl::io::savePCDFileASCII(submap_filename, submaps[x][y]) == -1)
+                        printf("Failed saving: %s", submap_filename);
                 }
-				else
-				{
-					if(pcl::io::savePCDFileBinary(filename, submaps[x][y]) == -1)
-					{
-						std::cout << "Failed saving " << filename << "." << std::endl;
-					}
-				}
+                else
+                {
+                    if(pcl::io::savePCDFileBinary(submap_filename, submaps[x][y]) == -1)
+                        printf("Failed saving: %s", submap_filename);
+                }
             }
         }
     return 0;
