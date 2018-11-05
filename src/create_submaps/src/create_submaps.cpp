@@ -14,14 +14,18 @@ Chun-Te
 #include <pcl/filters/voxel_grid.h>
 
 typedef pcl::PointXYZI PointT;
-#define submapXYSize 100
 
 int main (int argc, char** argv)
 {
-    if (argc < 3) {
-        printf("Usage: create_submap [ascii|binary] [filename]\n");
+    if (argc < 4) {
+        printf("Usage: create_submap [ascii|binary] [submap_size] [filename]\n");
         return -1;
     }
+    char file_format[512];
+    strcpy(file_format, argv[1]);
+    const int submap_size = atoi(argv[2]);
+    char filename[512];
+    strcpy(filename, argv[3]);
 
     int gridSizeX = 200;
     int gridSizeY = 200;
