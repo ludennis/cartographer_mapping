@@ -25,5 +25,3 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_executable(create_submaps src/create_submaps.cpp)
 
 target_link_libraries(create_submaps ${catkin_LIBRARIES})
-
-
