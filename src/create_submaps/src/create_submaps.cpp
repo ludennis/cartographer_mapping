@@ -13,9 +13,12 @@ Chun-Te
 #include <pcl/common/common.h>
 #include <pcl/filters/voxel_grid.h>
 
+#include "boost/multi_array.hpp"
+
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef PointCloudT::Ptr PointCloudTPtr;
+typedef boost::multi_array<PointCloudT, 2> PointCloudArray2D;
 
 int main (int argc, char** argv)
 {
@@ -29,8 +32,6 @@ int main (int argc, char** argv)
     char filename[512];
     strcpy(filename, argv[3]);
 
-    int gridSizeX = 200;
-    int gridSizeY = 200;
     PointCloudTPtr inputCloud (new PointCloudT);
     if(pcl::io::loadPCDFile(filename, *inputCloud) == -1)
     {
@@ -38,26 +39,35 @@ int main (int argc, char** argv)
         return -1;
     }
 
-    PointT minPt, maxPt;
-    pcl::getMinMax3D (*inputCloud, minPt, maxPt);
-    std::cout << "Max x: " << maxPt.x << std::endl;
-    std::cout << "Max y: " << maxPt.y << std::endl;
-    std::cout << "Max z: " << maxPt.z << std::endl;
-    std::cout << "Min x: " << minPt.x << std::endl;
-    std::cout << "Min y: " << minPt.y << std::endl;
-    std::cout << "Min z: " << minPt.z << std::endl;
+    PointT map_min_point, map_max_point;
+    pcl::getMinMax3D (*inputCloud, map_min_point, map_max_point);
+    std::cout << "Max x: " << map_max_point.x << std::endl;
+    std::cout << "Max y: " << map_max_point.y << std::endl;
+    std::cout << "Max z: " << map_max_point.z << std::endl;
+    std::cout << "Min x: " << map_min_point.x << std::endl;
+    std::cout << "Min y: " << map_min_point.y << std::endl;
+    std::cout << "Min z: " << map_min_point.z << std::endl;
 
-    for(unsigned int index = 0; index < inputCloud->size (); index ++)
+    const int x_grid_size = (int) ceil((map_max_point.x - map_min_point.x) / submap_size);
+    const int y_grid_size = (int) ceil((map_max_point.y - map_min_point.y) / submap_size);
+
+    PointCloudArray2D submaps(boost::extents[x_grid_size][y_grid_size]);
+
+    for(unsigned int index = 0; index < inputCloud->size(); ++index)
     {
-        int x = submapXYSize/2 + floor(inputCloud->points[index].x/gridSizeX);
-        int y = submapXYSize/2 + floor(inputCloud->points[index].y/gridSizeY);
-        submaps[x][y].points.push_back(inputCloud->points[index]);
+        const int x_grid =
+            (int) floor( (inputCloud->points[index].x - map_min_point.x) / submap_size);
+        const int y_grid =
+            (int) floor( (inputCloud->points[index].y - map_min_point.y) / submap_size);
+        submaps[x_grid][y_grid].points.push_back(inputCloud->points[index]);
     }
 
-    for(int x=0;x<submapXYSize;x++)
-        for(int y=0;y<submapXYSize;y++)
+
+    for(int x = 0; x < x_grid_size; ++x)
+    {
+        for(int y = 0; y < y_grid_size; ++y)
         {
-            if(submaps[x][y].size()>0)
+            if(submaps[x][y].size() > 0)
             {
                 // save to PCD file
                 submaps[x][y].width = (int) submaps[x][y].points.size();
