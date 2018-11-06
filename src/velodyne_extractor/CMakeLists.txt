@@ -11,10 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-	INCLUDE_DIRS include
+#   INCLUDE_DIRS include
 	LIBRARIES velodyne_extractor
 	CATKIN_DEPENDS pcl_conversions pcl_ros rosbag roscpp sensor_msgs tf
-	DEPENDS system_lib
+#	DEPENDS system_lib
 )
 
 ###########
