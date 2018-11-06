@@ -14,8 +14,6 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl_ros/transforms.h>
 
-#include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
 
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
@@ -51,13 +49,13 @@ int main (int argc, char** argv)
     write_bag.open(write_bag_filename, rosbag::bagmode::Write);
 
     pcl::PassThrough<PointT> pass_filter;
-    rosbag::View view(read_bag, rosbag::TopicQuery(topics));
 
     auto start = std::chrono::system_clock::now();
 
     PointCloudTPtr total_filtered_cloud_ptr (new PointCloudT);
 
-    foreach (rosbag::MessageInstance const m, view)
+    for(rosbag::MessageInstance const m: rosbag::View(
+        read_bag, rosbag::TopicQuery(topics)))
     {
         ros::Time msg_time = m.getTime();
         sensor_msgs::PointCloud2::ConstPtr pc2_msg =
