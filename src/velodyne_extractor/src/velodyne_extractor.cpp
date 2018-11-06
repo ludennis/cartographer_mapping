@@ -49,7 +49,7 @@ int main (int argc, char** argv)
     boost_po::store(boost_po::parse_command_line(argc, argv, description), var_map);
     boost_po::notify(var_map);
 
-    if(var_map.count("help"))
+    if(var_map.count("help") or argc < 2)
     {
         ROS_INFO_STREAM(std::endl << description);
         return 1;
