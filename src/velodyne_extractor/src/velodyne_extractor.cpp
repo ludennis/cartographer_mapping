@@ -1,5 +1,6 @@
-#include <iostream>
 #include <chrono>
+#include <iostream>
+#include <string>
 
 #include <ros/ros.h>
 #include <rosbag/bag.h>
@@ -14,27 +15,79 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl_ros/transforms.h>
 
+#include <boost/program_options.hpp>
 
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef pcl::PointCloud<PointT>::Ptr PointCloudTPtr;
+namespace boost_po = boost::program_options;
+
+std::string vehicle;
+double height_low_pass, height_high_pass;
+double intensity_low_pass, intensity_high_pass;
+std::string read_bag_filename;
 
 int main (int argc, char** argv)
 {
-    if (argc < 6)
+    boost_po::options_description description{"Allowed options"};
+    description.add_options()
+        ("help", "get help message")
+        ("vehicle", boost_po::value<std::string>()->default_value("cpev9"),
+            "set vehicle to cpev9|cpev27|cpev29|s3")
+        ("height-low-pass", boost_po::value<double>()->default_value(-200.0),
+            "height lower than this will be filtered out")
+        ("height-high-pass", boost_po::value<double>()->default_value(200.0),
+            "height higher than this will be filtered out")
+        ("intensity-low-pass", boost_po::value<int>()->default_value(0),
+            "intensity lower than this will be filtered out")
+        ("intensity-high-pass", boost_po::value<int>()->default_value(256),
+            "intensity higher than this will be filtered out")
+        ("read-bag-filename", boost_po::value<std::string>(),
+            "bag filename to be read");
+
+    boost_po::variables_map var_map;
+    boost_po::store(boost_po::parse_command_line(argc, argv, description), var_map);
+    boost_po::notify(var_map);
+
+    if(var_map.count("help"))
     {
-        ROS_ERROR ("Usage: velodyne_extractor [vehicle] [height_low_pass] [height_high_pass] \
-            [intensity_low_pass] [intensity_high_pass] [bag_filename]");
+        ROS_INFO_STREAM(std::endl << description);
+        return 1;
+    }
+    if(var_map.count("vehicle"))
+    {
+        vehicle = var_map["vehicle"].as<std::string>();
+        ROS_INFO_STREAM("Vehicle is set to: " << vehicle);
+    }
+    if(var_map.count("height-low-pass"))
+    {
+        height_low_pass = var_map["height-low-pass"].as<double>();
+        ROS_INFO_STREAM("Height low pass set to: " << height_low_pass);
+    }
+    if(var_map.count("height-high-pass"))
+    {
+        height_high_pass = var_map["height-high-pass"].as<double>();
+        ROS_INFO_STREAM("Height high pass set to: " << height_high_pass);
+    }
+    if(var_map.count("intensity-low-pass"))
+    {
+        intensity_low_pass = var_map["intensity-low-pass"].as<int>();
+        ROS_INFO_STREAM("Intensity low pass set to: " << intensity_low_pass);
+    }
+    if(var_map.count("intensity-high-pass"))
+    {
+        intensity_high_pass = var_map["intensity-high-pass"].as<int>();
+        ROS_INFO_STREAM("Intensity high pass set to: " << intensity_high_pass);
+    }
+    if(var_map.count("read-bag-filename"))
+    {
+        read_bag_filename = var_map["read-bag-filename"].as<std::string>();
+        ROS_INFO_STREAM("Read bag filename set to: " << read_bag_filename);
+    } else
+    {
+        ROS_ERROR("Read bag filename was not set, exiting");
         return -1;
     }
-    char read_bag_filename[512];
-    char vehicle[512];
-    strcpy(vehicle, argv[1]);
-    float height_low_pass(atof(argv[2]));
-    float height_high_pass(atof(argv[3]));
-    float intensity_low_pass(atof(argv[4]));
-    float intensity_high_pass(atof(argv[5]));
-    strcpy(read_bag_filename, argv[6]);
 
     rosbag::Bag read_bag;
     read_bag.open(read_bag_filename, rosbag::bagmode::Read);
@@ -44,8 +97,7 @@ int main (int argc, char** argv)
     topics.push_back(std::string("/imu/data"));
 
     rosbag::Bag write_bag;
-    char write_bag_filename[512];
-    sprintf(write_bag_filename, "%s-velodyne-extracted", read_bag_filename);
+    std::string write_bag_filename = read_bag_filename + "-velodyne-extracted";
     write_bag.open(write_bag_filename, rosbag::bagmode::Write);
 
     pcl::PassThrough<PointT> pass_filter;
@@ -73,13 +125,13 @@ int main (int argc, char** argv)
             pcl::fromPCLPointCloud2(pcl_pc2, *cloud_ptr);
 
             tf::Transform transform, transform_inverse;
-            if(strcmp("cpev29", vehicle)==0)
+            if(vehicle.compare("cpev29") == 0)
             {
                 transform.setOrigin(tf::Vector3(1.2, 0.0, 1.0));
                 tf::Quaternion q;
                 q.setRPY(0.005, 0.14, 0.0);
                 transform.setRotation(q);
-            } else if(strcmp("cpev9", vehicle)==0)
+            } else if(vehicle.compare("cpev9") == 0)
             {
                 transform.setOrigin(tf::Vector3(0.0, 0.0, 1.5));
                 tf::Quaternion q;
@@ -136,7 +188,7 @@ int main (int argc, char** argv)
     std::chrono::duration<double> elapsed_seconds = end-start;
     ROS_INFO ("Time Elapsed: %f seconds", elapsed_seconds.count());
     ROS_INFO ("Wrote to filename '%s' with height_threshold(%f, %f) and intensity "
-        "threshold (%f, %f)", write_bag_filename, height_low_pass,
+        "threshold (%f, %f)", write_bag_filename.c_str(), height_low_pass,
         height_high_pass, intensity_low_pass, intensity_high_pass);
 
     return 0;
