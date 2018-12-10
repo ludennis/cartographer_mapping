@@ -1,6 +1,6 @@
 /*
 Create submap from large map
-Chun-Te
+Chun-Te, Dennis
 */
 
 #include <iostream>
@@ -12,27 +12,61 @@ Chun-Te
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
 
-#include "boost/multi_array.hpp"
+#include <boost/program_options.hpp>
+#include <boost/multi_array.hpp>
 
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef PointCloudT::Ptr PointCloudTPtr;
 typedef boost::multi_array<PointCloudT, 2> PointCloudArray2D;
+namespace boost_po = boost::program_options;
+
+std::string file_format;
+int submap_size;
+std::string map_filename;
 
 int main (int argc, char** argv)
 {
-    if (argc < 4) {
-        printf("Usage: create_submap [ascii|binary] [submap_size] [filename]\n");
+    boost_po::options_description description{"Allowed options"};
+    description.add_options()
+        ("help", "get help message")
+        ("file-format", boost_po::value<std::string>()->default_value("binary"),
+            "file format, either 'ascii' or 'binary'")
+        ("submap-size", boost_po::value<int>()->default_value(100),
+            "size of each submap")
+        ("map-filename", boost_po::value<std::string>(), "map filename");
+
+    boost_po::variables_map var_map;
+    boost_po::store(boost_po::parse_command_line(argc, argv, description), var_map);
+    boost_po::notify(var_map);
+
+    if(var_map.count("help"))
+    {
+        ROS_INFO_STREAM(std::endl << description);
+        return 1;
+    }
+    if(var_map.count("file-format"))
+    {
+        file_format = var_map["file-format"].as<std::string>();
+        ROS_INFO_STREAM("Writing submaps with file format: " << file_format);
+    }
+    if(var_map.count("submap-size"))
+    {
+        submap_size = var_map["submap-size"].as<int>();
+        ROS_INFO_STREAM("Writing submaps with each submap size: " << submap_size);
+    }
+    if(var_map.count("map-filename"))
+    {
+        map_filename = var_map["map-filename"].as<std::string>();
+        ROS_INFO_STREAM("Loading map file: " << map_filename);
+    } else
+    {
+        ROS_ERROR("No map file given, exiting");
         return -1;
     }
-    char file_format[512];
-    strcpy(file_format, argv[1]);
-    const int submap_size = atoi(argv[2]);
-    char filename[512];
-    strcpy(filename, argv[3]);
 
     PointCloudTPtr inputCloud (new PointCloudT);
-    if(pcl::io::loadPCDFile(filename, *inputCloud) == -1)
+    if(pcl::io::loadPCDFile(map_filename, *inputCloud) == -1)
     {
         PCL_ERROR("Couldn't read file %s\n", filename);
         return -1;
