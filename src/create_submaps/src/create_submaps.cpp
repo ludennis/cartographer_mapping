@@ -15,6 +15,8 @@ Chun-Te, Dennis
 #include <boost/program_options.hpp>
 #include <boost/multi_array.hpp>
 
+#include <ros/ros.h>
+
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef PointCloudT::Ptr PointCloudTPtr;
@@ -68,18 +70,18 @@ int main (int argc, char** argv)
     PointCloudTPtr inputCloud (new PointCloudT);
     if(pcl::io::loadPCDFile(map_filename, *inputCloud) == -1)
     {
-        PCL_ERROR("Couldn't read file %s\n", filename);
+        ROS_ERROR_STREAM("Couldn't read file: " << map_filename);
         return -1;
     }
 
     PointT map_min_point, map_max_point;
     pcl::getMinMax3D (*inputCloud, map_min_point, map_max_point);
-    std::cout << "Max x: " << map_max_point.x << std::endl;
-    std::cout << "Max y: " << map_max_point.y << std::endl;
-    std::cout << "Max z: " << map_max_point.z << std::endl;
-    std::cout << "Min x: " << map_min_point.x << std::endl;
-    std::cout << "Min y: " << map_min_point.y << std::endl;
-    std::cout << "Min z: " << map_min_point.z << std::endl;
+    ROS_INFO_STREAM("" << "Max x: " << map_max_point.x);
+    ROS_INFO_STREAM("" << "Max y: " << map_max_point.y);
+    ROS_INFO_STREAM("" << "Max z: " << map_max_point.z);
+    ROS_INFO_STREAM("" << "Min x: " << map_min_point.x);
+    ROS_INFO_STREAM("" << "Min y: " << map_min_point.y);
+    ROS_INFO_STREAM("" << "Min z: " << map_min_point.z);
 
     const int x_grid_size = (int) ceil((map_max_point.x - map_min_point.x) / submap_size);
     const int y_grid_size = (int) ceil((map_max_point.y - map_min_point.y) / submap_size);
@@ -104,21 +106,21 @@ int main (int argc, char** argv)
             {
                 submaps[x][y].width = (int) submaps[x][y].points.size();
                 submaps[x][y].height = 1;
-                printf("submaps[%d][%d]: points.size() = %ld, width = %d, "
-                    "height = %d, is_dense = %d\n", x, y, submaps[x][y].points.size(),
+                ROS_INFO("submaps[%d][%d]: points.size() = %ld, width = %d, "
+                    "height = %d, is_dense = %d", x, y, submaps[x][y].points.size(),
                     submaps[x][y].width, submaps[x][y].height, submaps[x][y].is_dense);
-                char submap_filename[100];
-                sprintf(submap_filename, "./submap_%d_%d.pcd", x, y);
+                std::string submap_filename =
+                    "submap_" + std::to_string(x) + "_" + std::to_string(y) + ".pcd";
 
-                if(strcmp(file_format, "ascii") == 0)
+                if(file_format.compare("ascii") == 0)
                 {
                     if(pcl::io::savePCDFileASCII(submap_filename, submaps[x][y]) == -1)
-                        printf("Failed saving: %s", submap_filename);
+                        ROS_ERROR_STREAM("Failed saving: " << submap_filename);
                 }
                 else
                 {
                     if(pcl::io::savePCDFileBinary(submap_filename, submaps[x][y]) == -1)
-                        printf("Failed saving: %s", submap_filename);
+                        ROS_ERROR_STREAM("Failed saving: " << submap_filename);
                 }
             }
         }
