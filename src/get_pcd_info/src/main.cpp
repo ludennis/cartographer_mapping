@@ -1,3 +1,4 @@
+#include <string>
 #include <algorithm>
 #include <iostream>
 #include <jsoncpp/json/json.h>
@@ -12,6 +13,7 @@ int main (int argc, char** argv)
     Json::Value arrayObj;
     int numSubmaps = 0;
     int totalPoints = 0;
+    std::string directory = argv[1];
     for (auto & inputFile : fs::directory_iterator(argv[1]))
     {
         std::cout << "processing " << inputFile << std::endl;
@@ -65,7 +67,9 @@ int main (int argc, char** argv)
     builder["commentStyle"] = "None";
     builder["indentation"] = "    ";
     std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
-    std::ofstream outputFileStream("out/submap_config.json");
+    std::string out_filename = directory + "/submaps_config.json";
+    std::cout << "Writing to file: " << out_filename << std::endl;
+    std::ofstream outputFileStream(out_filename);
     writer -> write(rootJsonValue, &outputFileStream);
 
     return (0);

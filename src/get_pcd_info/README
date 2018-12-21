@@ -1,3 +1,3 @@
 ./build_and_run.sh [file_directory]
 
-'submap_config.json' will be at /out directory
+'submap_config.json' will be at the submaps' directory
