@@ -5,6 +5,50 @@ import csv
 import matplotlib.pyplot as plt
 import sys
 
+def update_annotation(index):
+    x, y = predict_pose_line.get_data()
+    predict_pose_annotations.xy = (predict_pose_x[index["ind"][0]], predict_pose_y[index["ind"][0]])
+    predict_pose_text = "predict_pose => point ({}, {}), index: {}, timestamp: {}".format(
+        " ".join([predict_pose_x[n] for n in index["ind"]]),
+        " ".join([predict_pose_y[n] for n in index["ind"]]),
+        " ".join(list(map(str, index["ind"]))),
+        " ".join([predict_pose_time[n] for n in index["ind"]]))
+    predict_pose_annotations.set_text(predict_pose_text)
+    predict_pose_annotations.get_bbox_patch().set_alpha(0.4)
+
+    x, y = predict_pose_smoothed_line.get_data()
+    predict_pose_smoothed_annotations.xy = (predict_pose_smoothed_x[index["ind"][0]],
+        predict_pose_smoothed_y[index["ind"][0]])
+    predict_pose_smoothed_text = "predict_pose_smoothed => point ({}, {}), index: {}, timestamp: {}".format(
+        " ".join([predict_pose_smoothed_x[n] for n in index["ind"]]),
+        " ".join([predict_pose_smoothed_y[n] for n in index["ind"]]),
+        " ".join(list(map(str, index["ind"]))),
+        " ".join([predict_pose_smoothed_time[n] for n in index["ind"]]))
+    predict_pose_smoothed_annotations.set_text(predict_pose_smoothed_text)
+    predict_pose_smoothed_annotations.get_bbox_patch().set_alpha(0.4)
+
+def hover(event):
+    predict_pose_annotation_is_visible = predict_pose_annotations.get_visible()
+    predict_pose_smoothed_annotation_is_visible = predict_pose_smoothed_annotations.get_visible()
+    if event.inaxes == ax:
+        predict_pose_cont, predict_pose_index = predict_pose_line.contains(event)
+        predict_pose_smoothed_cont, predict_pose_smoothed_index = predict_pose_smoothed_line.contains(event)
+        if predict_pose_cont:
+            update_annotation(predict_pose_index)
+            predict_pose_annotations.set_visible(True)
+            fig.canvas.draw_idle()
+        elif predict_pose_smoothed_cont:
+            update_annotation(predict_pose_smoothed_index)
+            predict_pose_smoothed_annotations.set_visible(True)
+            fig.canvas.draw_idle()
+        else:
+            if predict_pose_annotation_is_visible:
+                predict_pose_annotations.set_visible(False)
+                fig.canvas.draw_idle()
+            elif predict_pose_smoothed_annotation_is_visible:
+                predict_pose_smoothed_annotations.set_visible(False)
+                fig.canvas.draw_idle()
+
 if __name__ == '__main__':
 
     if len(sys.argv) < 2:
@@ -69,5 +113,16 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     predict_pose_line, = plt.plot(predict_pose_x, predict_pose_y, 'r.-')
     predict_pose_smoothed_line, = plt.plot(predict_pose_smoothed_x, predict_pose_smoothed_y, 'b.-')
+
+    predict_pose_annotations = ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+        bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
+
+    predict_pose_smoothed_annotations = ax.annotate("", xy=(0, 0), xytext=(-20, 20), textcoords="offset points",
+        bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
+
+    predict_pose_annotations.set_visible(False)
+    predict_pose_smoothed_annotations.set_visible(False)
+
+    fig.canvas.mpl_connect("motion_notify_event", hover)
 
     plt.show()
