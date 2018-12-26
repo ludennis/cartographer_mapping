@@ -4,20 +4,28 @@ add_definitions(-std=c++17)
 
 project(get_pcd_info)
 
-find_package(PCL 1.2 REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+    pcl_conversions
+    pcl_ros
+    roscpp
+)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 
+catkin_package()
+
 include_directories(
     ${PCL_INCLUDE_DIRS}
     ${JSONCPP_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
 )
+
 link_directories(
     ${PCL_LIBRARY_DIRS}  
 )
 
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (get_pcd_info src/main.cpp)
-target_link_libraries (get_pcd_info ${JSONCPP_LIBRARIES} ${PCL_LIBRARIES} -lstdc++fs)
+add_executable (${PROJECT_NAME} src/main.cpp)
+target_link_libraries (${PROJECT_NAME} ${JSONCPP_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES} -lstdc++fs)
