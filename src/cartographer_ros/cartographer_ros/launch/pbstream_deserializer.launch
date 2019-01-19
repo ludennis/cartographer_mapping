@@ -1,0 +1,7 @@
+<launch>
+  <node name="cartographer_pbstream_deserializer" pkg="cartographer_ros"
+      type="cartographer_pbstream_deserializer" args="
+          -pbstream_filename $(arg pbstream_filename)"
+      output="screen">
+  </node>
+</launch>
