@@ -161,6 +161,7 @@ install(DIRECTORY launch urdf configuration_files
 )
 
 install(PROGRAMS scripts/tf_remove_frames.py scripts/itri_patch_bag.py
+  scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
