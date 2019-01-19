@@ -80,6 +80,17 @@ install(TARGETS cartographer_rosbag_validate
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+google_binary(cartographer_pbstream_deserializer
+	SRCS
+		pbstream_deserializer_main.cc
+)
+
+install(TARGETS cartographer_pbstream_deserializer
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 google_binary(cartographer_pbstream_to_ros_map
   SRCS
     pbstream_to_ros_map_main.cc
