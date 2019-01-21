@@ -34,7 +34,7 @@ int main (int argc, char** argv)
         ("help", "get help message")
         ("file-format", boost_po::value<std::string>()->default_value("binary"),
             "file format, either 'ascii' or 'binary'")
-        ("submap-size", boost_po::value<int>()->default_value(100),
+        ("submap-size", boost_po::value<int>()->default_value(50),
             "size of each submap")
         ("map-filename", boost_po::value<std::string>(), "map filename");
 
