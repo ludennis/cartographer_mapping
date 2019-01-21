@@ -15,6 +15,10 @@
 include "transform.lua"
 
 options = {
+  project_to_nav_sat = true,
+  latitude_reference = 24.775084704,
+  longitude_reference = 121.045888961,
+  altitude_reference = 146.593,
   tracking_frame = "base_imu",
   pipeline = {
     {
