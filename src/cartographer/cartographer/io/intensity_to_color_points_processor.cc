@@ -58,7 +58,7 @@ void IntensityToColorPointsProcessor::Process(
           if (intensity > max_intensity)
           {
               max_intensity =  intensity;
-              std::cout <<  "max_intensity = "<< max_intensity << " gray = "<< gray << std::endl;
+              LOG(INFO) <<  "max_intensity = "<< max_intensity << " gray = "<< gray;
           }
 
       batch->intensities.push_back({gray});
