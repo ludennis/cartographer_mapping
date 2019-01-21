@@ -14,12 +14,14 @@
 
 include "transform.lua"
 
+SAMPLING_RATIO = 0.02
+
 options = {
   tracking_frame = "base_imu",
   pipeline = {
     {
         action = "fixed_ratio_sampler",
-        sampling_ratio = 0.20,
+        sampling_ratio = SAMPLING_RATIO,
     },
     {
         action = "motion_filter",
