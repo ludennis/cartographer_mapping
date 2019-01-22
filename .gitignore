@@ -6,3 +6,4 @@ devel
 *.pyc
 *.swp
 src/CMakeLists.txt
+*cscope*
