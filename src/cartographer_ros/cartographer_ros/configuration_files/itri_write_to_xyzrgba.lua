@@ -22,8 +22,19 @@ options = {
       sampling_ratio = 0.05,
     },
     {
-      action = "write_pcd",
-      filename = "points.pcd",
+        action = "motion_filter",
+        filter_speed_kmph = 0.1,
+        filter_distance = 0.01,
+    },
+    {
+        action = "intensity_to_color",
+        min_intensity = 0.,
+        max_intensity = 256.,
+    },
+    {
+        --action = "grid_map_write_pcd",
+        action = "write_pcd",
+        filename = "full.pcd",
     },
   }
 }
