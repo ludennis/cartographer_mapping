@@ -211,6 +211,10 @@ void AssetsWriter::Run(const std::string& configuration_directory,
       // the assumption of higher frequency tf this should ensure that tf can
       // always interpolate.
       const ::ros::Duration kDelay(1.);
+      size_t points_batch_index = 0;
+      cartographer::common::Time previous_start_time;
+      Eigen::Vector3f previous_origin;
+
       for (const rosbag::MessageInstance& message : view) {
         if (use_bag_transforms && message.isType<tf2_msgs::TFMessage>()) {
           auto tf_message = message.instantiate<tf2_msgs::TFMessage>();
@@ -246,6 +250,14 @@ void AssetsWriter::Run(const std::string& configuration_directory,
           }
           if (points_batch != nullptr) {
             points_batch->trajectory_id = trajectory_id;
+            points_batch->index = points_batch_index;
+            if (points_batch_index >= 1) {
+              points_batch->prev_origin = previous_origin;
+              points_batch->prev_start_time = previous_start_time;
+            }
+            ++points_batch_index;
+            previous_origin = points_batch->origin;
+            previous_start_time = points_batch->start_time;
             pipeline.back()->Process(std::move(points_batch));
           }
           delayed_messages.pop_front();
