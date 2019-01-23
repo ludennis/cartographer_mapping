@@ -39,10 +39,14 @@ struct PointsBatch {
 
   // Time at which the first point of this batch has been acquired.
   common::Time start_time;
+  common::Time prev_start_time;
 
   // Origin of the data, i.e. the location of the sensor in the world at
   // 'time'.
   Eigen::Vector3f origin;
+  Eigen::Vector3f prev_origin;
+
+  size_t index;
 
   // Sensor that generated this data's 'frame_id' or empty if this information
   // is unknown.
