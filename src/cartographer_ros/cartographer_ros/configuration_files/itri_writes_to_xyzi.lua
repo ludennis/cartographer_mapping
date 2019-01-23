@@ -28,6 +28,11 @@ options = {
         filter_distance = 0.1,
     },
     {
+        action = "motion_filter",
+        filter_speed_kmph = 0.1,
+        filter_distance = 0.01,
+    },
+    {
         action = "intensity_to_color",
         min_intensity = 0.,
         max_intensity = 256.,
