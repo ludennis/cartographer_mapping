@@ -67,9 +67,9 @@ int main (int argc, char** argv)
     builder["commentStyle"] = "None";
     builder["indentation"] = "    ";
     std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
-    std::string out_filename = directory + "/submaps_config.json";
-    std::cout << "Writing to file: " << out_filename << std::endl;
-    std::ofstream outputFileStream(out_filename);
+    std::string outFilename = directory + "/submaps_config.json";
+    std::cout << "Writing to file: " << outFilename << std::endl;
+    std::ofstream outputFileStream(outFilename);
     writer -> write(rootJsonValue, &outputFileStream);
 
     return (0);
