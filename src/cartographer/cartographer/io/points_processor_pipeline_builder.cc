@@ -31,6 +31,7 @@
 #include "cartographer/io/probability_grid_points_processor.h"
 #include "cartographer/io/xray_points_processor.h"
 #include "cartographer/io/xyz_writing_points_processor.h"
+#include "cartographer/io/motion_filter_points_processor.h"
 #include "cartographer/mapping/proto/trajectory.pb.h"
 
 namespace cartographer {
@@ -80,6 +81,7 @@ void RegisterBuiltInPointsProcessors(
     const std::vector<mapping::proto::Trajectory>& trajectories,
     const FileWriterFactory& file_writer_factory,
     PointsProcessorPipelineBuilder* builder) {
+  RegisterPlainPointsProcessor<MotionFilterPointsProcessor>(builder);
   RegisterPlainPointsProcessor<CountingPointsProcessor>(builder);
   RegisterPlainPointsProcessor<FixedRatioSamplingPointsProcessor>(builder);
   RegisterPlainPointsProcessor<FrameIdFilteringPointsProcessor>(builder);
