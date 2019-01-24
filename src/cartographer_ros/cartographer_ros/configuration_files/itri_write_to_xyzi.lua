@@ -24,8 +24,8 @@ options = {
 
     {
         action = "motion_filter",
-        filter_speed_kmph = 0.1,
-        filter_distance = 0.01,
+        filter_speed_kmph = 1.0,
+        filter_distance = 0.1,
     },
     {
         action = "intensity_to_color",
