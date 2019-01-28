@@ -81,9 +81,13 @@ if __name__ == '__main__':
     plt.title('GPS Coverage Plot')
     plt.xlabel('X-Axis (meters)')
     plt.ylabel('Y-Axis (meters)')
-    plt.scatter(x, y, color=colors, s=0.001, marker='x')
+    plt.scatter(x, y, color=colors, s=1.0, marker='x')
 
     # store as a file in the location where bag file is located
+    fig = plt.gcf()
     bag_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
-    plt.savefig(sys.argv[1] + '_gps_coverage.png', dpi=900)
+    fig.savefig(sys.argv[1] + '_gps_coverage.png', dpi=900)
     print('Stored plot as "{}"'.format(sys.argv[1] + '_gps_coverage.png'))
+
+    # show the graph after saving
+    plt.show()
