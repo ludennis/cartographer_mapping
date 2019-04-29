@@ -29,12 +29,11 @@ options = {
 }
 
 MAP_BUILDER.use_trajectory_builder_3d = true
-MAP_BUILDER.num_background_threads = 30
+MAP_BUILDER.num_background_threads = 15
 
 -- no point of traying to SLAM over points on the vehicle 2019-01-18
 TRAJECTORY_BUILDER_3D.min_range = 2.5
 TRAJECTORY_BUILDER_3D.max_range = 150
-
 
 -- 2019-01-18 commented
 -- set these let ceres scan matcher to not trust the priors
@@ -71,7 +70,7 @@ POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 200
 POSE_GRAPH.constraint_builder.max_constraint_distance = 2.5e2
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_xy_search_window = 2.5e2
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 3e1
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(5e1)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(2e1)
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.ceres_solver_options.max_num_iterations = 5e1
 
 -- increases weighting for gps 2019-03-13
@@ -92,10 +91,13 @@ POSE_GRAPH.constraint_builder.min_score = 0.3
 -- increases sampling ratio to allow finding loop closure 2019-03-15
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.03
 -- decrease submap size for more flexibility 2019-03-14
-TRAJECTORY_BUILDER_3D.submaps.num_range_data = 6e1
-POSE_GRAPH.optimize_every_n_nodes = 6e1
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 1e2
+POSE_GRAPH.optimize_every_n_nodes = 1e2
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
 
 POSE_GRAPH.max_num_final_iterations = 2e3
+
+-- added for using velodyne packets 2019-03-24
+TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 91;
 
 return options
