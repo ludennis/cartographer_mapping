@@ -14,7 +14,7 @@
 
 include "transform.lua"
 
-SAMPLING_RATIO = 0.02
+SAMPLING_RATIO = 0.01
 
 options = {
   tracking_frame = "base_imu",
@@ -22,6 +22,11 @@ options = {
     {
         action = "fixed_ratio_sampler",
         sampling_ratio = SAMPLING_RATIO,
+    },
+    {
+        action = "min_max_range_filter",
+        min_range = 2.0,
+        max_range = 300.,
     },
     {
         action = "motion_filter",
