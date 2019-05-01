@@ -1,12 +1,21 @@
 #!/usr/bin/env python
 import argparse
 from rosbag import Bag
+from sensor_msgs.msg import PointCloud2
+import sensor_msgs.point_cloud2 as pcl2
+
 parser = argparse.ArgumentParser(description='Patch ITRI datasets.')
 parser.add_argument('infile', metavar='in.bag')
 parser.add_argument('lidar_input_topic')
+parser.add_argument('--filter-points',
+    help="reduce number of lidar points to deisred amount",
+    type=int, nargs="?")
 args = parser.parse_args()
 outfile = args.infile[:-4] + "-patched.bag"
 print("Writing patched bag file to " + outfile)
+if args.filter_points:
+    print("Downsampling each {} to {} points/message with adaptive ratio sampler".format(
+        args.lidar_input_topic, args.filter_points))
 
 smooth_queue_x_ang_vel = []
 smooth_queue_y_ang_vel = []
@@ -27,8 +36,18 @@ imu_smoothing = False
 with Bag(outfile, 'w') as fout:
     for topic, msg, t in Bag(args.infile):
         if topic == args.lidar_input_topic:
-            msg.header.frame_id = 'velodyne'
-            fout.write(topic, msg, t)
+            if args.filter_points:
+                points = pcl2.read_points_list(msg)
+                filtered_points = PointCloud2()
+                step_size = len(points) / args.filter_points
+                filtered_points = \
+                    [points[i] for i in range(0, len(points), step_size)]
+                msg.header.frame_id = 'velodyne'
+                filtered_points_msg = pcl2.create_cloud(
+                    msg.header, msg.fields, filtered_points)
+                fout.write(topic, filtered_points_msg, t)
+            else:
+                fout.write(topic, msg, t)
         if topic == '/nmea_sentence':
             if msg.sentence.split(',')[0] == '$GPGGA' and msg.sentence.split(',')[6] >= '4':
                 good_gps_signal = True
