@@ -36,11 +36,13 @@ void MotionFilterPointsProcessor::Process(
     LOG(INFO) << "Current PointsBatch origin: (" << batch->origin[0] << ", "
               << batch->origin[1] << ", " << batch->origin[2] << ")";
 
-    const double delta_distance = (batch->prev_origin - batch->origin).norm();
-    const double delta_seconds = common::ToSeconds(batch->start_time - batch->prev_start_time);
+    double delta_distance = sqrt( pow(batch->prev_origin[0] - batch->origin[0], 2) +
+                           pow(batch->prev_origin[1] - batch->origin[1], 2) +
+                           pow(batch->prev_origin[2] - batch->origin[2], 2));
+    double delta_seconds = common::ToSeconds(batch->start_time - batch->prev_start_time);
 
-    const double speed_mps = delta_distance / delta_seconds;
-    const double speed_kmph = speed_mps / 1000. * 60. * 60.;
+    double speed_mps = delta_distance / delta_seconds;
+    double speed_kmph = speed_mps / 1000. * 60. * 60.;
 
     LOG(INFO) << "delta_distance: " << delta_distance << "m, delta_seconds: "
               << delta_seconds << "seconds, speed_mps: " << speed_mps

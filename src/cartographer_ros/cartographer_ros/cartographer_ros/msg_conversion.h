@@ -81,6 +81,11 @@ Eigen::Quaterniond ToEigen(const geometry_msgs::Quaternion& quaternion);
 Eigen::Vector3d LatLongAltToEcef(double latitude, double longitude,
                                  double altitude);
 
+Eigen::Vector3d LatLongAltToEcefWithReference(
+   const double latitude, const double longitude, const double altitude,
+   const double latitude_reference, const double longitude_reference,
+   const double altitude_reference);
+
 // Returns a transform that takes ECEF coordinates from nearby points to a local
 // frame that has z pointing upwards.
 cartographer::transform::Rigid3d ComputeLocalFrameFromLatLong(double latitude,

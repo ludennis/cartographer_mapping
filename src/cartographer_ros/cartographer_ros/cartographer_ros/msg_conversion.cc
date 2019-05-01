@@ -289,6 +289,44 @@ Eigen::Vector3d LatLongAltToEcef(const double latitude, const double longitude,
   return Eigen::Vector3d(x, y, z);
 }
 
+Eigen::Vector3d LatLongAltToEcefWithReference(
+    const double latitude, const double longitude, const double altitude,
+    const double latitude_reference, const double longitude_reference,
+    const double altitude_reference) {
+  const float a = 6378137.0;
+  const float b = 6356752.3142;
+  float e_squared = 1.0f - pow ( (b/a), 2);
+
+  // location of reference point in radians
+  double phi = latitude_reference * M_PI / 180.0f;
+  double lam = longitude_reference * M_PI / 180.0f;
+  float h = altitude_reference;
+
+  // localtion of data points in radians
+  double delta_phi = (latitude * M_PI / 180.0f) - phi;
+  double delta_lam = (longitude * M_PI / 180.0f) - lam;
+  float delta_h = altitude - h;
+
+  // some useful definitions
+  float cos_phi = cos(phi);
+  float sin_phi = sin(phi);
+  float N = sqrt ( 1.0f - e_squared * pow(sin_phi, 2));
+
+  // transformations
+  double x = ( a / N + h) * cos_phi * delta_lam -
+      ( (a * (1.0f - e_squared)) / pow(N, 3) + h ) * sin_phi * delta_phi * delta_lam +
+      cos_phi * delta_lam * delta_h;
+  double y = ( a * (1.0f - e_squared) / pow(N, 3) + h) * delta_phi +
+      1.5f * cos_phi * sin_phi * a * e_squared * pow(delta_phi, 2) +
+      pow(sin_phi, 2) * delta_h * delta_phi +
+      0.5f * sin_phi * cos_phi * (a / N + h) * pow(delta_lam, 2);
+  double z = delta_h - 0.5f * (a - 1.5f * a * e_squared * pow(cos_phi, 2) +
+      0.5f * a * e_squared + h) * pow(delta_phi, 2) -
+      0.5f * pow(cos_phi, 2) * (a / N - h) * pow(delta_lam, 2);
+
+  return Eigen::Vector3d(x, y, z);
+}
+
 cartographer::transform::Rigid3d ComputeLocalFrameFromLatLong(
     const double latitude, const double longitude) {
   const Eigen::Vector3d translation = LatLongAltToEcef(latitude, longitude, 0.);
