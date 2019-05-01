@@ -40,10 +40,13 @@
 #include "cartographer_ros/urdf_reader.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "pcl/point_cloud.h"
+#include "pcl/registration/transformation_estimation_svd.h"
 #include "ros/ros.h"
 #include "ros/time.h"
 #include "rosbag/bag.h"
 #include "rosbag/view.h"
+#include "sensor_msgs/NavSatFix.h"
 #include "tf2_eigen/tf2_eigen.h"
 #include "tf2_msgs/TFMessage.h"
 #include "tf2_ros/buffer.h"
@@ -134,6 +137,82 @@ std::unique_ptr<carto::io::PointsBatch> HandleMessage(
   return points_batch;
 }
 
+void GeoreferenceTransformInterpolationBuffer(rosbag::View& view,
+    carto::transform::TransformInterpolationBuffer &transform_interpolation_buffer,
+    const double& latitude_reference, const double& longitude_reference,
+    const double& altitude_reference) {
+  pcl::PointCloud<pcl::PointXYZ> nav_sat_cloud;
+  pcl::PointCloud<pcl::PointXYZ> trajectory_cloud;
+
+  std::vector<Eigen::Vector3d> nav_sat_poses;
+  std::vector<::cartographer::transform::Rigid3d> trajectory_poses;
+
+  for (const rosbag::MessageInstance& msg : view) {
+    if (msg.isType<sensor_msgs::NavSatFix>()){
+      auto nav_sat_msg = msg.instantiate<sensor_msgs::NavSatFix>();
+      if(nav_sat_msg->status.status != sensor_msgs::NavSatStatus::STATUS_NO_FIX) {
+        Eigen::Vector3d nav_sat_pose =
+            LatLongAltToEcefWithReference(nav_sat_msg->latitude,
+              nav_sat_msg->longitude, nav_sat_msg->altitude,
+              latitude_reference, longitude_reference, altitude_reference);
+
+        const ::cartographer::common::Time time = FromRos(nav_sat_msg->header.stamp);
+        if (!transform_interpolation_buffer.Has(time)) {
+          continue;
+        }
+        ::cartographer::transform::Rigid3d trajectory_pose =
+            transform_interpolation_buffer.Lookup(time);
+
+        nav_sat_poses.push_back(nav_sat_pose);
+        trajectory_poses.push_back(trajectory_pose);
+        nav_sat_cloud.points.push_back(
+              pcl::PointXYZ(nav_sat_pose.x(),
+                            nav_sat_pose.y(),
+                            nav_sat_pose.z()));
+        trajectory_cloud.push_back(
+              pcl::PointXYZ(trajectory_pose.translation().x(),
+                            trajectory_pose.translation().y(),
+                            trajectory_pose.translation().z()));
+      }
+    }
+  }
+
+  CHECK_GT(nav_sat_cloud.points.size(), 0);
+  CHECK_GT(trajectory_cloud.points.size(), 0);
+  CHECK_EQ(nav_sat_cloud.points.size(), trajectory_cloud.points.size());
+
+  LOG(INFO) << "nav_sat_cloud.points.size: " << nav_sat_cloud.points.size();
+  LOG(INFO) << "trajectory_cloud.points.size: " << trajectory_cloud.points.size();
+
+  pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ, double>
+      transform_estimator;
+  Eigen::Matrix4d estimation_transform_eigen;
+
+  transform_estimator.estimateRigidTransformation(
+      trajectory_cloud, nav_sat_cloud, estimation_transform_eigen);
+
+  LOG(INFO) << "estimation_transform_eigen: \n";
+  std::cout << estimation_transform_eigen << std::endl;
+
+  Eigen::Vector3d estimation_translation(
+      estimation_transform_eigen.topRightCorner(3, 1));
+
+  Eigen::Matrix3d estimation_rotation(
+      estimation_transform_eigen.topLeftCorner(3, 3));
+
+  LOG(INFO) << "estimation_transform_eigen block: \n";
+  std::cout << estimation_translation << std::endl;
+
+  LOG(INFO) << "estimation_transform_eigen block: \n";
+  std::cout << estimation_rotation << std::endl;
+
+  ::cartographer::transform::Rigid3d estimation_transform(
+        estimation_translation, Eigen::AngleAxisd(estimation_rotation));
+
+  transform_interpolation_buffer.UpdatePosesWithRigidTransform(estimation_transform);
+
+}
+
 }  // namespace
 
 AssetsWriter::AssetsWriter(const std::string& pose_graph_filename,
@@ -178,6 +257,14 @@ void AssetsWriter::Run(const std::string& configuration_directory,
           lua_parameter_dictionary->GetDictionary("pipeline").get());
   const std::string tracking_frame =
       lua_parameter_dictionary->GetString("tracking_frame");
+  const bool project_to_nav_sat =
+      lua_parameter_dictionary->GetBool("project_to_nav_sat");
+  const double latitude_reference =
+      lua_parameter_dictionary->GetDouble("latitude_reference");
+  const double longitude_reference =
+      lua_parameter_dictionary->GetDouble("longitude_reference");
+  const double altitude_reference =
+      lua_parameter_dictionary->GetDouble("altitude_reference");
 
   do {
     for (size_t trajectory_id = 0; trajectory_id < bag_filenames_.size();
@@ -194,7 +281,7 @@ void AssetsWriter::Run(const std::string& configuration_directory,
         ReadStaticTransformsFromUrdf(urdf_filename, &tf_buffer);
       }
 
-      const carto::transform::TransformInterpolationBuffer
+      carto::transform::TransformInterpolationBuffer
           transform_interpolation_buffer(trajectory_proto);
       rosbag::Bag bag;
       bag.open(bag_filename, rosbag::bagmode::Read);
@@ -202,6 +289,17 @@ void AssetsWriter::Run(const std::string& configuration_directory,
       const ::ros::Time begin_time = view.getBeginTime();
       const double duration_in_seconds =
           (view.getEndTime() - begin_time).toSec();
+
+      LOG(INFO) << "project_to_nav_sat: " << project_to_nav_sat;
+      if (project_to_nav_sat) {
+        LOG(INFO) << "Georeferencing according to latitude_reference: "
+                  << latitude_reference << ", longitude_reference: "
+                  << longitude_reference << ", altitude_reference: "
+                  << altitude_reference;
+        GeoreferenceTransformInterpolationBuffer(view,
+            transform_interpolation_buffer, latitude_reference,
+            longitude_reference, altitude_reference);
+      }
 
       // We need to keep 'tf_buffer' small because it becomes very inefficient
       // otherwise. We make sure that tf_messages are published before any data

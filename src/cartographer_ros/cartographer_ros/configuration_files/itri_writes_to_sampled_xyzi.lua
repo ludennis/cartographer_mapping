@@ -14,9 +14,13 @@
 
 include "transform.lua"
 
-SAMPLING_RATIO = 0.01
+SAMPLING_RATIO = 0.04
 
 options = {
+  project_to_nav_sat = true,
+  latitude_reference = 24.775084704,
+  longitude_reference = 121.045888961,
+  altitude_reference = 146.593,
   tracking_frame = "base_imu",
   pipeline = {
     {
@@ -30,8 +34,8 @@ options = {
     },
     {
         action = "motion_filter",
-        filter_speed_kmph = 0.1,
-        filter_distance = 0.01,
+        filter_speed_kmph = 1.5,
+        filter_distance = 0.0,
     },
     {
         action = "intensity_to_color",
@@ -39,9 +43,8 @@ options = {
         max_intensity = 256.,
     },
     {
-        --action = "grid_map_write_pcd",
         action = "write_pcd",
-        filename = "full.pcd",
+        filename = "sampled-" .. SAMPLING_RATIO .. ".pcd",
     },
   }
 }

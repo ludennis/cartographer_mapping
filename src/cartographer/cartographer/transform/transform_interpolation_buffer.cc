@@ -79,5 +79,14 @@ bool TransformInterpolationBuffer::empty() const {
   return timestamped_transforms_.empty();
 }
 
+void TransformInterpolationBuffer::UpdatePosesWithRigidTransform(
+    const Rigid3d& transform) {
+  LOG(INFO) << "transform: " << transform;
+  for (size_t i = 0; i < timestamped_transforms_.size(); ++i) {
+    timestamped_transforms_[i].transform = transform *
+        timestamped_transforms_[i].transform;
+  }
+}
+
 }  // namespace transform
 }  // namespace cartographer

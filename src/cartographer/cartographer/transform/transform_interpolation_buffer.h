@@ -56,6 +56,8 @@ class TransformInterpolationBuffer {
   // Returns true if the buffer is empty.
   bool empty() const;
 
+  void UpdatePosesWithRigidTransform(const Rigid3d& transform);
+
  private:
   std::vector<TimestampedTransform> timestamped_transforms_;
 };
