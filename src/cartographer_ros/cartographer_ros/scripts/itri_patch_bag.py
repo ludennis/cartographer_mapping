@@ -11,7 +11,13 @@ parser.add_argument('--filter-points',
     help="reduce number of lidar points to deisred amount",
     type=int, nargs="?")
 args = parser.parse_args()
-outfile = args.infile[:-4] + "-patched.bag"
+filter_flag = \
+  "-filtered-{}".format(args.filter_points) if args.filter_points else ""
+
+outfile = args.infile[:-4] + filter_flag + "-patched.bag"
+
+
+
 print("Writing patched bag file to " + outfile)
 if args.filter_points:
     print("Downsampling each {} to {} points/message with adaptive ratio sampler".format(
@@ -36,12 +42,15 @@ imu_smoothing = False
 with Bag(outfile, 'w') as fout:
     for topic, msg, t in Bag(args.infile):
         if topic == args.lidar_input_topic:
-            if args.filter_points:
+            if args.filter_points and msg.width > args.filter_points:
                 points = pcl2.read_points_list(msg)
                 filtered_points = PointCloud2()
-                step_size = len(points) / args.filter_points
+                step_size = msg.width / args.filter_points
+                print ("step_size: {}".format(step_size))
                 filtered_points = \
                     [points[i] for i in range(0, len(points), step_size)]
+                print ("len(points): {}".format(len(points)))
+                print ("len(filtered_points): {}".format(len(filtered_points)))
                 msg.header.frame_id = 'velodyne'
                 filtered_points_msg = pcl2.create_cloud(
                     msg.header, msg.fields, filtered_points)
