@@ -73,16 +73,8 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_w
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(2e1)
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.ceres_solver_options.max_num_iterations = 5e1
 
--- increases weighting for gps 2019-03-13
--- suggestion: increase it more to prevent zhanglang bridge from squeezing
--- POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 2e1
--- POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 0
-
 -- increase submap size for mapping on zhanglang bridge 2019-03-13
 TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 7e1
-
--- decrease rotation_weight to let ceres scan matcher not trust priors 2019-03-14
--- TRAJECTORY_BUILDER_3D.ceres_scan_matcher.rotation_weight = 5
 
 
 -- changes made to find loop closure
@@ -97,7 +89,15 @@ POSE_GRAPH.optimization_problem.huber_scale = 1e2
 
 POSE_GRAPH.max_num_final_iterations = 2e3
 
--- added for using velodyne packets 2019-03-24
-TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 91;
+-- added for using velodyne packets 2019-03-24 with VLS128
+-- TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 626;
+
+-- added for using velodyne packets with HDL-32e
+TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 181;
+
+-- increases weighting for gps 2019-03-13
+-- suggestion: increase it more to prevent zhanglang bridge from squeezing
+POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 1e2
+-- POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 0
 
 return options
