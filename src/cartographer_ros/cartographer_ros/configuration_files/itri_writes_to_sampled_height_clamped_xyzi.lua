@@ -14,31 +14,42 @@
 
 include "transform.lua"
 
+SAMPLING_RATIO = 0.1
+
 options = {
+  project_to_nav_sat = true,
+  latitude_reference = 24.775084704,
+  longitude_reference = 121.045888961,
+  altitude_reference = 146.593,
   tracking_frame = "base_imu",
   pipeline = {
-    -- {
-    --     action = "fixed_ratio_sampler",
-    --     sampling_ratio = 1.0,
-    -- },
+    {
+        action = "fixed_ratio_sampler",
+        sampling_ratio = SAMPLING_RATIO,
+    },
+    {
+        action = "height_clamping",
+        min_height = -3,
+        max_height = 500.0,
+    },
+    {
+        action = "min_max_range_filter",
+        min_range = 2.0,
+        max_range = 300.,
+    },
+    {
+        action = "motion_filter",
+        filter_speed_kmph = 1.5,
+        filter_distance = 0.0,
+    },
     {
         action = "intensity_to_color",
         min_intensity = 0.,
         max_intensity = 256.,
     },
     {
-        action = "min_max_range_filter",
-        min_range = 0.,
-        max_range = 100.,
-    },
-    {
-        action = "height_clamping",
-        min_height = -50,
-        max_height = 0.0,
-    },
-    {
         action = "write_pcd",
-        filename = "clamped.pcd",
+        filename = "clamped-sampled-" .. SAMPLING_RATIO .. ".pcd",
     },
   }
 }
