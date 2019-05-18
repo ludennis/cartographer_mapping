@@ -32,7 +32,7 @@ MAP_BUILDER.use_trajectory_builder_3d = true
 MAP_BUILDER.num_background_threads = 15
 
 -- no point of traying to SLAM over points on the vehicle 2019-01-18
-TRAJECTORY_BUILDER_3D.min_range = 2.5
+TRAJECTORY_BUILDER_3D.min_range = 0
 TRAJECTORY_BUILDER_3D.max_range = 150
 
 -- 2019-01-18 commented
@@ -68,27 +68,30 @@ POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 200
 -- 2019-01-18
 -- Crazy search window to force loop closure to work. All other changes are probably not needed
 POSE_GRAPH.constraint_builder.max_constraint_distance = 2.5e2
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_xy_search_window = 2.5e2
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 3e1
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(2e1)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_xy_search_window = 1e2
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 1e1
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(1e1)
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.ceres_solver_options.max_num_iterations = 5e1
 
 -- increases weighting for gps 2019-03-13
 -- suggestion: increase it more to prevent zhanglang bridge from squeezing
-POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 2e1
+-- POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 2e1
 -- POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 0
 
 -- increase submap size for mapping on zhanglang bridge 2019-03-13
-TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 7e1
+TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 6e1
+
+-- decrease rotation_weight to let ceres scan matcher not trust priors 2019-03-14
+-- TRAJECTORY_BUILDER_3D.ceres_scan_matcher.rotation_weight = 5
 
 
 -- changes made to find loop closure
 -- increases min score to get better loop closure at zhanglang bridge 2019-03-13
-POSE_GRAPH.constraint_builder.min_score = 0.3
+POSE_GRAPH.constraint_builder.min_score = 0.4
 -- increases sampling ratio to allow finding loop closure 2019-03-15
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.003
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.01
 -- decrease submap size for more flexibility 2019-03-14
-TRAJECTORY_BUILDER_3D.submaps.num_range_data = 1e2
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 8e2
 POSE_GRAPH.optimize_every_n_nodes = 1e2
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
 
