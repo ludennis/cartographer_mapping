@@ -4,7 +4,7 @@
   <version>0.0.0</version>
   <description>The point_cloud_downsample package</description>
 
-  <maintainer email="Dennis.Lu@itri.org.tw">Dennis Lu</maintainer>
+  <maintainer email="ctwu@itri.org.tw">Chunte Wu</maintainer>
   <license>ITRI</license>
 
   <buildtool_depend>catkin</buildtool_depend>
