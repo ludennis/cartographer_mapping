@@ -91,7 +91,7 @@ POSE_GRAPH.constraint_builder.min_score = 0.4
 -- increases sampling ratio to allow finding loop closure 2019-03-15
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.01
 -- decrease submap size for more flexibility 2019-03-14
-TRAJECTORY_BUILDER_3D.submaps.num_range_data = 8e2
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 8e1
 POSE_GRAPH.optimize_every_n_nodes = 1e2
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
 
