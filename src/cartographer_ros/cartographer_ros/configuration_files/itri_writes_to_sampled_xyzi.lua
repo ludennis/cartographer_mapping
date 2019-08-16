@@ -14,13 +14,19 @@
 
 include "transform.lua"
 
-SAMPLING_RATIO = 0.04
+SAMPLING_RATIO = 0.003
 
 options = {
   project_to_nav_sat = true,
-  latitude_reference = 24.775084704,
-  longitude_reference = 121.045888961,
-  altitude_reference = 146.593,
+  -- ITRI
+  -- latitude_reference = 24.775084704,
+  -- longitude_reference = 121.045888961,
+  -- altitude_reference = 146.593,
+
+  -- Shalun
+  latitude_reference = 22.922378267,
+  longitude_reference = 120.288798412,
+  altitude_reference = 46.6147044534,
   tracking_frame = "base_imu",
   pipeline = {
     {
@@ -29,7 +35,7 @@ options = {
     },
     {
         action = "min_max_range_filter",
-        min_range = 2.0,
+        min_range = 3.0,
         max_range = 300.,
     },
     {

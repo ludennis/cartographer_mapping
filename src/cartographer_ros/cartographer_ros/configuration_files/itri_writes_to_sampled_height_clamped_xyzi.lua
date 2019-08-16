@@ -29,8 +29,8 @@ options = {
     },
     {
         action = "height_clamping",
-        min_height = -3,
-        max_height = 500.0,
+        min_height = -200,
+        max_height = 0.0,
     },
     {
         action = "min_max_range_filter",
@@ -45,7 +45,7 @@ options = {
     {
         action = "intensity_to_color",
         min_intensity = 0.,
-        max_intensity = 256.,
+        max_intensity = 65536.,
     },
     {
         action = "write_pcd",
