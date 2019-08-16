@@ -32,7 +32,7 @@ MAP_BUILDER.use_trajectory_builder_3d = true
 MAP_BUILDER.num_background_threads = 15
 
 -- no point of traying to SLAM over points on the vehicle 2019-01-18
-TRAJECTORY_BUILDER_3D.min_range = 0.0
+TRAJECTORY_BUILDER_3D.min_range = 2.5
 TRAJECTORY_BUILDER_3D.max_range = 200
 
 -- 2019-01-18 commented
@@ -57,7 +57,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_wi
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.ceres_solver_options.max_num_iterations = 5e1
 
 -- increase submap size for mapping on zhanglang bridge 2019-03-13
-TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 7e1
+TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 6e1
 
 -- decrease rotation_weight to let ceres scan matcher not trust priors 2019-03-14
 -- TRAJECTORY_BUILDER_3D.ceres_scan_matcher.rotation_weight = 5
@@ -65,8 +65,8 @@ TRAJECTORY_BUILDER_3D.submaps.high_resolution_max_range = 7e1
 
 -- changes made to find loop closure
 -- decrease submap size for more flexibility 2019-03-14
-TRAJECTORY_BUILDER_3D.submaps.num_range_data = 8e1
-POSE_GRAPH.optimize_every_n_nodes = 1e2
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 1e2
+POSE_GRAPH.optimize_every_n_nodes = 4e1
 POSE_GRAPH.optimization_problem.huber_scale = 1e2
 
 POSE_GRAPH.max_num_final_iterations = 2e3
@@ -76,17 +76,17 @@ TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 626;
 
 -- 2019-05-02 tuned parameters for faster SLAM
 TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.max_length = 8. -- was 5
-TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.min_num_points = 200. -- was 250
+TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.min_num_points = 150. -- was 250
 TRAJECTORY_BUILDER_3D.low_resolution_adaptive_voxel_filter.max_length = 12. -- was 8
-TRAJECTORY_BUILDER_3D.low_resolution_adaptive_voxel_filter.min_num_points = 300. -- was 400
+TRAJECTORY_BUILDER_3D.low_resolution_adaptive_voxel_filter.min_num_points = 250. -- was 400
 
-TRAJECTORY_BUILDER_3D.submaps.high_resolution = .5 -- was .25
-TRAJECTORY_BUILDER_3D.submaps.low_resolution = 1.0 -- was .60
+TRAJECTORY_BUILDER_3D.submaps.high_resolution = .4 -- was .25
+TRAJECTORY_BUILDER_3D.submaps.low_resolution = 0.8 -- was .60
 TRAJECTORY_BUILDER_3D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 50
 
 POSE_GRAPH.constraint_builder.min_score = 0.3 -- was 0.3
 -- increases sampling ratio to allow finding loop closure 2019-03-15
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.03 -- was 0.03
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.0003 -- was 0.03
 
 -- incrases weight to go for highway68
 POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 1e2
