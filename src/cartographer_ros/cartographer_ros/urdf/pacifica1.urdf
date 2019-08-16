@@ -38,7 +38,7 @@
   <joint name="car_to_imu_mount" type="fixed">
     <parent link="base_link"/>
     <child link="tracking_imu"/>
-    <origin rpy="-0.07200409107649926 0.08272472913712309 0.018289895683322135" xyz="0 0 0"/>
+    <origin rpy="-0.014072329314525574 0.0365023826176044 -0.0339465024275643" xyz="0 0 0"/>
   </joint>
 
   <joint name="imu_mount_to_imu" type="fixed">
