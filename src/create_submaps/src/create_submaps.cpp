@@ -1,6 +1,6 @@
 /*
 Create submap from large map
-Chun-Te, Dennis
+Chun-Te, Dennis, Yu-Syuan
 */
 
 #include <iostream>
@@ -17,6 +17,7 @@ Chun-Te, Dennis
 
 #include <ros/ros.h>
 
+#include <boost/filesystem.hpp>
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef PointCloudT::Ptr PointCloudTPtr;
@@ -97,6 +98,15 @@ int main (int argc, char** argv)
         submaps[x_grid][y_grid].points.push_back(inputCloud->points[index]);
     }
 
+    std::string removed_text = ".pcd";
+    std::size_t text_index = map_filename.find(removed_text);
+    if(text_index != std::string::npos)
+    {
+        map_filename.erase(text_index, removed_text.length());
+    }
+
+    std::string out_file_directory = map_filename + "_submaps/";
+    boost::filesystem::create_directories(out_file_directory);
 
     for(int x = 0; x < x_grid_size; ++x)
     {
@@ -114,12 +124,12 @@ int main (int argc, char** argv)
 
                 if(file_format.compare("ascii") == 0)
                 {
-                    if(pcl::io::savePCDFileASCII(submap_filename, submaps[x][y]) == -1)
+                    if(pcl::io::savePCDFileASCII(out_file_directory + submap_filename, submaps[x][y]) == -1)
                         ROS_ERROR_STREAM("Failed saving: " << submap_filename);
                 }
                 else
                 {
-                    if(pcl::io::savePCDFileBinary(submap_filename, submaps[x][y]) == -1)
+                    if(pcl::io::savePCDFileBinary(out_file_directory + submap_filename, submaps[x][y]) == -1)
                         ROS_ERROR_STREAM("Failed saving: " << submap_filename);
                 }
             }
