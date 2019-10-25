@@ -5,6 +5,7 @@ Chun-Te, Dennis, Yu-Syuan
 
 #include <algorithm>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -32,6 +33,8 @@ namespace fs = std::experimental::filesystem;
 std::string file_format;
 int submap_size;
 std::string map_filename;
+std::string str_gps_reference_array;
+std::vector<double> gps_reference_array;
 
 int main (int argc, char** argv)
 {
@@ -42,7 +45,9 @@ int main (int argc, char** argv)
             "file format, either 'ascii' or 'binary'")
         ("submap-size", boost_po::value<int>()->default_value(50),
             "size of each submap")
-        ("map-filename", boost_po::value<std::string>(), "map filename");
+        ("map-filename", boost_po::value<std::string>(), "map filename")
+        ("gps-reference", boost_po::value<std::string>()->default_value("nan"),
+            "Please enter 'latitude,longitude,altitude'");
 
     boost_po::variables_map var_map;
     boost_po::store(boost_po::parse_command_line(argc, argv, description), var_map);
@@ -71,6 +76,41 @@ int main (int argc, char** argv)
     {
         ROS_ERROR("No map file given, exiting");
         return -1;
+    }
+    if(var_map.count("gps-reference"))
+    {
+        str_gps_reference_array = var_map["gps-reference"].as<std::string>();
+        if (str_gps_reference_array != "nan")
+        {
+            std::regex comma(",");
+            std::vector<std::string> tmp_str(std::sregex_token_iterator(
+                str_gps_reference_array.begin(), str_gps_reference_array.end(),
+                comma, -1), std::sregex_token_iterator());
+            if (tmp_str.size() <=3)
+            {
+                ROS_INFO_STREAM("GPS Reference:(" << tmp_str[0] << ", " <<
+                    tmp_str[1] << ", " << tmp_str[2] << ")");
+
+                for (auto tmp_elemnt:tmp_str)
+                {
+                    gps_reference_array.push_back(std::stod(tmp_elemnt));
+                }
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Please check gps reference input:" <<
+                    str_gps_reference_array);
+                return -1;
+            }
+        }
+        else
+        {
+            ROS_WARN("GPS Reference will be set nan, please enter argument.");
+            for (int i = 0; i < 3; ++i)
+            {
+                gps_reference_array.push_back(std::nan(""));
+            }
+        }
     }
 
     PointCloudTPtr inputCloud (new PointCloudT);
