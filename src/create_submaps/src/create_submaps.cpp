@@ -3,6 +3,7 @@ Create submap from large map
 Chun-Te, Dennis, Yu-Syuan
 */
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -18,11 +19,15 @@ Chun-Te, Dennis, Yu-Syuan
 #include <ros/ros.h>
 
 #include <boost/filesystem.hpp>
+#include <experimental/filesystem>
+#include <jsoncpp/json/json.h>
+
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef PointCloudT::Ptr PointCloudTPtr;
 typedef boost::multi_array<PointCloudT, 2> PointCloudArray2D;
 namespace boost_po = boost::program_options;
+namespace fs = std::experimental::filesystem;
 
 std::string file_format;
 int submap_size;
@@ -135,5 +140,69 @@ int main (int argc, char** argv)
             }
         }
     }
+
+    // Get submaps_config.json
+    Json::Value array_obj;
+    int num_submaps = 0;
+    int total_points = 0;
+
+    for (auto & input_file : fs::directory_iterator(out_file_directory))
+    {
+        std::cout << "processing " << input_file << std::endl;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+
+        Json::Value tmp_value;
+
+        if (pcl::io::loadPCDFile<pcl::PointXYZ> (fs::path(input_file).string(), *cloud) == -1)
+        {
+            PCL_ERROR ("Couldn't read file %s\n", fs::path(input_file).string().c_str());
+        }
+        else
+        {
+            std::cout << "Loaded "
+                    << cloud->width * cloud->height
+                    << " data points from test_pcd.pcd with the following fields: "
+                    << std::endl;
+
+            std::vector<float> pt_x;
+            std::vector<float> pt_y;
+            for (size_t i = 0; i < cloud->points.size(); ++i)
+            {
+                pt_x.push_back(cloud->points[i].x);
+                pt_y.push_back(cloud->points[i].y);
+            }
+
+            const float center_x = 0.5f * (
+                *std::max_element(pt_x.begin(), pt_x.end()) +
+                *std::min_element(pt_x.begin(), pt_x.end()));
+
+            const float center_y = 0.5f * (
+                *std::max_element(pt_y.begin(), pt_y.end()) +
+                *std::min_element(pt_y.begin(), pt_y.end()));
+
+            tmp_value["num_points"] = Json::Value(
+                static_cast<int>(cloud->points.size()));
+            tmp_value["file_name"] = fs::path(input_file).filename().string().c_str();
+            tmp_value["center_x"] = Json::Value(center_x);
+            tmp_value["center_y"] = Json::Value(center_y);
+            array_obj.append(tmp_value);
+            num_submaps ++;
+            total_points += cloud->points.size();
+        }
+    }
+
+    Json::Value root_json_value;
+    root_json_value["num_submaps"] = num_submaps;
+    root_json_value["total_points"] = total_points;
+    root_json_value["submaps"] = array_obj;
+    Json::StreamWriterBuilder builder;
+    builder["commentStyle"] = "None";
+    builder["indentation"] = "    ";
+    std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+    std::cout << "Writing to file: " << out_file_directory + "submaps_config.json" << std::endl;
+    std::ofstream output_file_stream(out_file_directory + "submaps_config.json");
+    writer -> write(root_json_value, &output_file_stream);
+
+
     return 0;
 }
