@@ -34,7 +34,7 @@ std::string file_format;
 int submap_size;
 std::string map_filename;
 std::string str_gps_reference_array;
-std::vector<double> gps_reference_array;
+std::vector<std::string> gps_reference_array;
 
 int main (int argc, char** argv)
 {
@@ -93,7 +93,7 @@ int main (int argc, char** argv)
 
                 for (auto tmp_elemnt:tmp_str)
                 {
-                    gps_reference_array.push_back(std::stod(tmp_elemnt));
+                    gps_reference_array.push_back(tmp_elemnt);
                 }
             }
             else
@@ -108,7 +108,7 @@ int main (int argc, char** argv)
             ROS_WARN("GPS Reference will be set nan, please enter argument.");
             for (int i = 0; i < 3; ++i)
             {
-                gps_reference_array.push_back(std::nan(""));
+                gps_reference_array.push_back("nan");
             }
         }
     }
@@ -235,6 +235,11 @@ int main (int argc, char** argv)
     root_json_value["num_submaps"] = num_submaps;
     root_json_value["total_points"] = total_points;
     root_json_value["submaps"] = array_obj;
+    Json::Value gps_obj;
+    gps_obj["latitude"] = gps_reference_array[0];
+    gps_obj["longitude"] = gps_reference_array[1];
+    gps_obj["altitude"] = gps_reference_array[2];
+    root_json_value["gps_reference"] = gps_obj;
     Json::StreamWriterBuilder builder;
     builder["commentStyle"] = "None";
     builder["indentation"] = "    ";
