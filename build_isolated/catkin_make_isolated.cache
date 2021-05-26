@@ -1,0 +1,2 @@
+cartographer:cartographer_ros/cartographer_ros:cartographer_ros/cartographer_ros_msgs:cartographer_ros/cartographer_rviz
+-G Ninja -DCATKIN_DEVEL_PREFIX=/home/ludennis/cartographer_mapping/devel_isolated -DCMAKE_INSTALL_PREFIX=/home/ludennis/cartographer_mapping/install_isolated
