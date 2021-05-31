@@ -5,7 +5,7 @@ sudo apt-get install -y python-wstool python-rosdep ninja-build
 
 wstool init src
 
-wstool merge -t src https://raw.githubusercontent.com/googlecartographer/cartographer_ros/master/cartographer_ros.rosinstall
+wstool merge -t src https://raw.githubusercontent.com/googlecartographer/cartographer_ros/35ad459bd9b05fe06fbcde96a6c44bc01808efd6/cartographer_ros.rosinstall
 wstool update -t src
 
 src/cartographer/scripts/install_proto3.sh
